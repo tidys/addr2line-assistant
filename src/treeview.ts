@@ -47,7 +47,7 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
   getChildren(element?: MyTreeItem): vscode.ProviderResult<TreeItem[]> {
     const items = [];
     if (!element) {
-      // root: 去配置里面查找phone
+      // root: 去配置里面查找ip
       const ips = getIPS();
       for (let i = 0; i < ips.length; i++) {
         const treeItem = new MyTreeItem(ips[i], Type.IP);

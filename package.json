@@ -17,7 +17,7 @@
     "configuration": {
       "title": "",
       "properties": {
-        "a2la.phones": {
+        "a2la.ips": {
           "type": "array",
           "default": [],
           "description": "连接的手机"
@@ -44,18 +44,18 @@
         "title": "set leak file"
       },
       {
-        "command": "addr2line-assistant.addPhone",
-        "title": "addPhone",
+        "command": "addr2line-assistant.addIP",
+        "title": "add IP",
         "icon": "$(add)"
       },
       {
-        "command": "addr2line-assistant.removePhone",
-        "title": "removePhone",
+        "command": "addr2line-assistant.removeIP",
+        "title": "remove IP",
         "icon": "$(remove)"
       },
       {
-        "command": "addr2line-assistant.connectPhone",
-        "title": "connectPhone",
+        "command": "addr2line-assistant.connectIP",
+        "title": "connect IP",
         "icon": "$(debug-disconnect)"
       },
       {
@@ -86,18 +86,18 @@
     "menus": {
       "view/title": [
         {
-          "command": "addr2line-assistant.addPhone",
+          "command": "addr2line-assistant.addIP",
           "when": "view == addr2line:main",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "addr2line-assistant.removePhone",
+          "command": "addr2line-assistant.removeIP",
           "when": "view == addr2line:main && viewItem==ip"
         },
         {
-          "command": "addr2line-assistant.connectPhone",
+          "command": "addr2line-assistant.connectIP",
           "when": "view==addr2line:main && viewItem==ip",
           "group": "inline"
         },

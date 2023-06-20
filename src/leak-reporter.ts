@@ -18,7 +18,7 @@ class LeakResult {
 
 class LeakReporter {
   leaks: LeakResult[] = [];
-  async connectPhone(ip: string) {
+  async connectIP(ip: string) {
     log.output(`connecting ${ip}`);
     if (ADbDriver.isSystemAdbAvailable()) {
       const ret: string = await ADbDriver.execADBCommand(`adb connect ${ip}`);

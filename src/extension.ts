@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addPhone, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile } from './config';
 import { checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -30,13 +30,13 @@ export function activate(context: vscode.ExtensionContext) {
     await setLeakFile(ret);
   }));
 
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.connectPhone',
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.connectIP',
     async (treeItem: MyTreeItem) => {
       if (treeItem && typeof treeItem.label === 'string') {
-        await leakReporter.connectPhone(treeItem.label);
+        await leakReporter.connectIP(treeItem.label);
       }
     }));
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.removePhone',
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.removeIP',
     async (treeItem: MyTreeItem) => {
       if (treeItem.label && typeof treeItem.label === 'string') {
         const ret = await removeIP(treeItem.label);
@@ -75,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
       log.output(`添加app失败:${ret2.msg}`);
     }
   }));
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addPhone', async () => {
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addIP', async () => {
     const preValue = "192.168.1.";
     const ip = await vscode.window.showInputBox({ title: "请输入手机IP", value: preValue, valueSelection: [preValue.length, preValue.length] });
     if (!ip) { return; }
@@ -84,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
       log.output(`${ret1.msg}`);
       return;
     }
-    const ret2 = await addPhone(ip);
+    const ret2 = await addIP(ip);
     if (!ret2.err) {
       treeDataProvider.refresh();
     } else {
