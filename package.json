@@ -43,6 +43,11 @@
         "command": "addr2line-assistant.addPhone",
         "title": "addPhone",
         "icon": "$(add)"
+      },
+      {
+        "command": "addr2line-assistant.removePhone",
+        "title": "removePhone",
+        "icon": "$(remove)"
       }
     ],
     "viewsContainers": {
@@ -60,6 +65,13 @@
           "command": "addr2line-assistant.addPhone",
           "when": "view == addr2line:main",
           "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "addr2line-assistant.removePhone",
+          "when": "view == addr2line:main",
+          "group": "inline"
         }
       ]
     },
