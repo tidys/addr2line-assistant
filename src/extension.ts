@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addPhone, getLeakFile, getPhones, removeAPP, removePhone, setLeakFile } from './config';
+import { addApp, addPhone, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile } from './config';
 import { checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -15,13 +15,16 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
     vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
   }));
-
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.pullLeakFile',
+    async (treeItem: MyTreeItem) => {
+      leakReporter.pullReportFile(treeItem.ip, treeItem.app);
+    }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.setleakfile', async (param) => {
     let preValue = getLeakFile();
     if (!preValue) {
       preValue = "files/Documents/leak_report.txt";
     }
-    const ret = await vscode.window.showInputBox({ title: "设置内存泄露汇报文件地址(相对于APP)", value: preValue, valueSelection: [preValue.length, preValue.length] })
+    const ret = await vscode.window.showInputBox({ title: "设置内存泄露汇报文件地址(相对于APP)", value: preValue, valueSelection: [preValue.length, preValue.length] });
     if (!ret) { return; }
     // 允许文件没有后缀
     await setLeakFile(ret);
@@ -36,11 +39,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.removePhone',
     async (treeItem: MyTreeItem) => {
       if (treeItem.label && typeof treeItem.label === 'string') {
-        const ret = await removePhone(treeItem.label);
+        const ret = await removeIP(treeItem.label);
         if (!ret.err) {
           treeDataProvider.refresh();
         } else {
-          log.output(`删除IP失败:${ret.msg}`)
+          log.output(`删除IP失败:${ret.msg}`);
         }
       }
     }));
@@ -51,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (!ret.err) {
           treeDataProvider.refresh();
         } else {
-          log.output(`删除APP失败:${ret.msg}`)
+          log.output(`删除APP失败:${ret.msg}`);
         }
       }
     }));

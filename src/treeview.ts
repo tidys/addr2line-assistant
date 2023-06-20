@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { TreeItem } from "vscode"
-import { getApps, getPhones } from './config';
+import { getApps, getIPS } from './config';
 import { log } from './log';
 import { execSync } from 'child_process';
 
@@ -11,6 +11,8 @@ enum Type {
 }
 export class MyTreeItem extends vscode.TreeItem {
   public type: Type = Type.NONE;
+  public ip: string = '';
+  public app: string = '';
   constructor(label: string, type: Type) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.label = label;
@@ -46,9 +48,10 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
     const items = [];
     if (!element) {
       // root: 去配置里面查找phone
-      const phones = getPhones();
-      for (let i = 0; i < phones.length; i++) {
-        const treeItem = new MyTreeItem(phones[i], Type.IP);
+      const ips = getIPS();
+      for (let i = 0; i < ips.length; i++) {
+        const treeItem = new MyTreeItem(ips[i], Type.IP);
+        treeItem.ip = ips[i];
         items.push(treeItem);
       }
     } else {
@@ -58,6 +61,8 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
         const apps = getApps();
         for (let i = 0; i < apps.length; i++) {
           const treeItem = new MyTreeItem(apps[i], Type.APP);
+          treeItem.ip = element.ip;
+          treeItem.app = apps[i];
           items.push(treeItem);
         }
       }

@@ -1,8 +1,12 @@
 import { createReadStream } from "fs";
 import { execSync, execFile } from "child_process";
 import * as readline from "readline";
-import * as ADbDriver from "adb-driver"
-import { log } from "./log";
+import * as ADbDriver from "adb-driver";
+import { Log, log } from "./log";
+import { getLeakFile } from "./config";
+import { tmpdir, homedir } from "os"
+import { ensureFileSync } from "fs-extra"
+import { join } from "path";
 const soFiles = "";
 class LeakResult {
   public address: string[] = [];
@@ -32,10 +36,40 @@ class LeakReporter {
     //   }
     // });
   }
-  pullReportFile() {
-    const prefix = "/storage/emulated/0/Android/data/";
-    const cmd = `adb pull`;
-    execSync(cmd);
+  async pullReportFile(ip: string, app: string) {
+    if (ADbDriver.isSystemAdbAvailable()) {
+      const prefix = "/storage/emulated/0/Android/data";
+      const leakFile = getLeakFile();
+      const remoteLeakFile = `${prefix}/${app}/${leakFile}`;
+
+      const b = await this.remoteDevicesFileExist(remoteLeakFile);
+      if (!b) {
+        log.output(`远程设备不存在文件：${remoteLeakFile}`);
+        return;
+      }
+
+      //  /storage/emulated/0/Android/data/com.example.jni/files/Documents/leak_report.txt
+      const time = (new Date()).getTime();
+      const localFile = join(homedir(), 'leak', `leak_report_${time}.txt`);
+      ensureFileSync(localFile);
+      const cmd = `adb pull ${remoteLeakFile} ${localFile}`;
+      log.output(cmd);
+      const ret: string = await ADbDriver.execADBCommand(cmd);
+      log.output(ret);
+    }
+
+  }
+  async remoteDevicesFileExist(file: string) {
+    if (ADbDriver.isSystemAdbAvailable()) {
+      const cmd = `adb shell ls ${file}`;
+      const ret: string = await ADbDriver.execADBCommand(cmd);
+      // 如果文件存在，则会输出文件的名称和路径。如果文件不存在，则不会输出任何内容。
+      if (ret && ret.indexOf(file) !== -1) {
+        return true;
+      }
+      return false;
+    }
+    return false;
   }
   async parse(file: string) {
     return new Promise((resolve, rejects) => {
@@ -51,7 +85,7 @@ class LeakReporter {
       rl.on('close', () => {
         rejects();
       });
-    })
+    });
 
   }
 }

@@ -14,7 +14,7 @@ export async function setLeakFile(file: string): Promise<boolean> {
   return true;
 }
 
-export function getPhones() {
+export function getIPS() {
   const config = vscode.workspace.getConfiguration(id);
   return config.get<string[]>(KEY_PHONES, []);
 }
@@ -42,7 +42,7 @@ export async function addApp(app: string): Promise<{ err: number, msg: string }>
 export async function addPhone(ip: string): Promise<{ err: number, msg: string }> {
   const ret = { err: 0, msg: '' }
   const config = vscode.workspace.getConfiguration(id);
-  const phones = getPhones();
+  const phones = getIPS();
   if (!phones.find(el => el === ip)) {
     phones.push(ip);
     await config.update(KEY_PHONES, phones);
@@ -68,10 +68,10 @@ export async function removeAPP(pkg: string): Promise<{ err: number, msg: string
     return ret;
   }
 }
-export async function removePhone(ip: string): Promise<{ err: number, msg: string }> {
+export async function removeIP(ip: string): Promise<{ err: number, msg: string }> {
   const ret = { err: 0, msg: '' }
   const config = vscode.workspace.getConfiguration(id);
-  const phones = getPhones();
+  const phones = getIPS();
   const index = phones.findIndex(el => el === ip);
   if (index !== -1) {
     phones.splice(index, 1);
