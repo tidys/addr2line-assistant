@@ -29,7 +29,7 @@
         },
         "a2la.leak-file": {
           "type": "string",
-          "default": "leak-report.txt",
+          "default": "",
           "description": "内存泄露报告文件"
         }
       }
@@ -38,6 +38,10 @@
       {
         "command": "addr2line-assistant.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "addr2line-assistant.setleakfile",
+        "title": "set leak file"
       },
       {
         "command": "addr2line-assistant.addPhone",
@@ -55,9 +59,14 @@
         "icon": "$(debug-disconnect)"
       },
       {
-        "command": "addr2line-assistant.addApk",
-        "title": "add apk",
+        "command": "addr2line-assistant.addAPP",
+        "title": "add app",
         "icon": "$(add)"
+      },
+      {
+        "command": "addr2line-assistant.removeAPP",
+        "title": "add app",
+        "icon": "$(remove)"
       }
     ],
     "viewsContainers": {
@@ -80,17 +89,22 @@
       "view/item/context": [
         {
           "command": "addr2line-assistant.removePhone",
-          "when": "view == addr2line:main",
+          "when": "view == addr2line:main && viewItem==ip",
           "group": "inline"
         },
         {
           "command": "addr2line-assistant.connectPhone",
-          "when": "view== addr2line:main",
+          "when": "view==addr2line:main && viewItem==ip",
           "group": "inline"
         },
         {
-          "command": "addr2line-assistant.addApk",
-          "when": "view==addr2line:main"
+          "command": "addr2line-assistant.addAPP",
+          "when": "view==addr2line:main && viewItem==ip"
+        },
+        {
+          "command": "addr2line-assistant.removeAPP",
+          "when": "view==addr2line:main && viewItem==app",
+          "group": "inline"
         }
       ]
     },

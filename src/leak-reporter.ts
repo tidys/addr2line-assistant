@@ -33,6 +33,7 @@ class LeakReporter {
     // });
   }
   pullReportFile() {
+    const prefix = "/storage/emulated/0/Android/data/";
     const cmd = `adb pull`;
     execSync(cmd);
   }

@@ -1,3 +1,7 @@
+export function checkLeakFileValid(file: string): { err: number, msg: string } {
+  const ret = { err: 0, msg: '' };
+  return ret;
+}
 export function checkAppValid(pkg: string): { err: number, msg: string } {
   const ret = { err: 0, msg: '' };
   const arr = pkg.split('.');

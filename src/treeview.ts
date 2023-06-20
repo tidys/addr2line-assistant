@@ -5,16 +5,17 @@ import { log } from './log';
 import { execSync } from 'child_process';
 
 enum Type {
-  None = 0,
-  Phone = 1,
-  APP = 2,
+  NONE = 'none',
+  IP = 'ip',
+  APP = 'app',
 }
 export class MyTreeItem extends vscode.TreeItem {
-  public type: Type = Type.None;
+  public type: Type = Type.NONE;
   constructor(label: string, type: Type) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.label = label;
     this.type = type;
+    this.contextValue = type;
     switch (type) {
       case Type.APP: {
         this.command = {
@@ -47,12 +48,12 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
       // root: 去配置里面查找phone
       const phones = getPhones();
       for (let i = 0; i < phones.length; i++) {
-        const treeItem = new MyTreeItem(phones[i], Type.Phone);
+        const treeItem = new MyTreeItem(phones[i], Type.IP);
         items.push(treeItem);
       }
     } else {
       const { type } = element;
-      if (type === Type.Phone) {
+      if (type === Type.IP) {
         // show app
         const apps = getApps();
         for (let i = 0; i < apps.length; i++) {

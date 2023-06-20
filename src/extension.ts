@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addPhone, getPhones, removePhone } from './config';
+import { addApp, addPhone, getLeakFile, getPhones, removeAPP, removePhone, setLeakFile } from './config';
 import { checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -14,6 +14,17 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
     vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
+  }));
+
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.setleakfile', async (param) => {
+    let preValue = getLeakFile();
+    if (!preValue) {
+      preValue = "files/Documents/leak_report.txt";
+    }
+    const ret = await vscode.window.showInputBox({ title: "设置内存泄露汇报文件地址(相对于APP)", value: preValue, valueSelection: [preValue.length, preValue.length] })
+    if (!ret) { return; }
+    // 允许文件没有后缀
+    await setLeakFile(ret);
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.connectPhone',
@@ -33,7 +44,18 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     }));
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addApk', async () => {
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.removeAPP',
+    async (treeItem: MyTreeItem) => {
+      if (treeItem.label && typeof treeItem.label === 'string') {
+        const ret = await removeAPP(treeItem.label);
+        if (!ret.err) {
+          treeDataProvider.refresh();
+        } else {
+          log.output(`删除APP失败:${ret.msg}`)
+        }
+      }
+    }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addAPP', async () => {
     const preValue = "com.";
     const pkg = await vscode.window.showInputBox({ title: "请输入APK包名", value: preValue, valueSelection: [preValue.length, preValue.length] });
     if (!pkg) { return; };
