@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { TreeItem } from "vscode"
 import { getPhones } from './config';
+import { log } from './log';
+import { execSync } from 'child_process';
 
 enum Type {
   Phone = 0,
@@ -10,9 +12,11 @@ export class MyTreeItem extends vscode.TreeItem {
     super(label);
     this.label = label;
   }
+
 }
 export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>{
   data: TreeItem[] = [];
+
   private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | void>();
 
   get onDidChangeTreeData(): vscode.Event<TreeItem | void> {
@@ -39,4 +43,5 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
   refresh() {
     this._onDidChangeTreeData.fire();
   }
+
 }
