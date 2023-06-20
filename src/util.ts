@@ -12,6 +12,10 @@ export function checkAppValid(pkg: string): { err: number, msg: string } {
   }
   return ret;
 }
+export enum ERROR {
+  NO_PORT = 1,
+}
+
 export function checkIsIpValid(str: string): { err: number, msg: string } {
   const ret = { err: 0, msg: '' };
 
@@ -27,7 +31,7 @@ export function checkIsIpValid(str: string): { err: number, msg: string } {
   }
   const port = arr[3].split(':');
   if (port.length !== 2) {
-    ret.err = 2;
+    ret.err = ERROR.NO_PORT;
     ret.msg = "缺少端口";
     return ret;
   }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile } from './config';
-import { checkAppValid, checkIsIpValid } from './util';
+import { ERROR, checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
 import { leakReporter } from './leak-reporter';
@@ -77,9 +77,22 @@ export function activate(context: vscode.ExtensionContext) {
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addIP', async () => {
     const preValue = "192.168.1.";
-    const ip = await vscode.window.showInputBox({ title: "请输入手机IP", value: preValue, valueSelection: [preValue.length, preValue.length] });
+    let ip = await vscode.window.showInputBox({ title: "请输入手机IP", value: preValue, valueSelection: [preValue.length, preValue.length] });
     if (!ip) { return; }
-    const ret1 = checkIsIpValid(ip);
+    let ret1 = checkIsIpValid(ip);
+    if (ret1.err === ERROR.NO_PORT) {
+      const port = await vscode.window.showInputBox({ title: "请输入端口", value: "6666" });
+      if (!port) {
+        return;
+      }
+      if (ip.endsWith(":")) {
+        ip += port;
+      } else {
+        ip = `${ip}:${port}`;
+      }
+      ret1 = checkIsIpValid(ip);
+    }
+
     if (ret1.err) {
       log.output(`${ret1.msg}`);
       return;
