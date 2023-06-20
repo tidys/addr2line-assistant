@@ -14,12 +14,67 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "",
+      "properties": {
+        "a2la.phones": {
+          "type": "array",
+          "default": [],
+          "description": "连接的手机"
+        },
+        "a2la.apps": {
+          "type": "array",
+          "default": [],
+          "description": "游戏包名"
+        },
+        "a2la.leak-file": {
+          "type": "string",
+          "default": "leak-report.txt",
+          "description": "内存泄露报告文件"
+        }
+      }
+    },
     "commands": [
       {
         "command": "addr2line-assistant.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "addr2line-assistant.addPhone",
+        "title": "addPhone",
+        "icon": "$(add)"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "addr2line",
+          "title": "addr2line",
+          "icon": "./address.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "addr2line-assistant.addPhone",
+          "when": "view == addr2line:main",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "addr2line": [
+        {
+          "id": "addr2line:main",
+          "name": "leak with app"
+        },
+        {
+          "id": "addr2line:main2",
+          "name": "leak with file"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
