@@ -53,6 +53,11 @@
         "command": "addr2line-assistant.connectPhone",
         "title": "connectPhone",
         "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "addr2line-assistant.addApk",
+        "title": "add apk",
+        "icon": "$(add)"
       }
     ],
     "viewsContainers": {
@@ -82,6 +87,10 @@
           "command": "addr2line-assistant.connectPhone",
           "when": "view== addr2line:main",
           "group": "inline"
+        },
+        {
+          "command": "addr2line-assistant.addApk",
+          "when": "view==addr2line:main"
         }
       ]
     },

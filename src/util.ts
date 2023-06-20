@@ -1,5 +1,15 @@
-export function checkIsIp(str: string): { err: number, msg: string } {
-  const ret = { err: 0, msg: '' }
+export function checkAppValid(pkg: string): { err: number, msg: string } {
+  const ret = { err: 0, msg: '' };
+  const arr = pkg.split('.');
+  if (arr.length !== 3) {
+    ret.err = 1;
+    ret.msg = "包名无效";
+    return ret;
+  }
+  return ret;
+}
+export function checkIsIpValid(str: string): { err: number, msg: string } {
+  const ret = { err: 0, msg: '' };
 
   const regex = /^(\d{1,3}\.){3}\d{1,3}:\d{1,5}$/;
   if (regex.test(str)) {

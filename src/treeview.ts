@@ -1,16 +1,32 @@
 import * as vscode from 'vscode';
 import { TreeItem } from "vscode"
-import { getPhones } from './config';
+import { getApps, getPhones } from './config';
 import { log } from './log';
 import { execSync } from 'child_process';
 
 enum Type {
-  Phone = 0,
+  None = 0,
+  Phone = 1,
+  APP = 2,
 }
 export class MyTreeItem extends vscode.TreeItem {
-  constructor(label: string) {
-    super(label);
+  public type: Type = Type.None;
+  constructor(label: string, type: Type) {
+    super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.label = label;
+    this.type = type;
+    switch (type) {
+      case Type.APP: {
+        this.command = {
+          title: '1111',
+          command: 'addr2line-assistant.helloWorld',
+          tooltip: "111",
+          arguments: [this]
+        };
+        break;
+      }
+    }
+
   }
 
 }
@@ -25,14 +41,27 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
   getTreeItem(element: TreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
   }
-  getChildren(element?: TreeItem): vscode.ProviderResult<TreeItem[]> {
-    // 去配置里面查找phone
-    const phones = getPhones();
-    const item = [];
-    for (let i = 0; i < phones.length; i++) {
-      item.push(new TreeItem(phones[i]));
+  getChildren(element?: MyTreeItem): vscode.ProviderResult<TreeItem[]> {
+    const items = [];
+    if (!element) {
+      // root: 去配置里面查找phone
+      const phones = getPhones();
+      for (let i = 0; i < phones.length; i++) {
+        const treeItem = new MyTreeItem(phones[i], Type.Phone);
+        items.push(treeItem);
+      }
+    } else {
+      const { type } = element;
+      if (type === Type.Phone) {
+        // show app
+        const apps = getApps();
+        for (let i = 0; i < apps.length; i++) {
+          const treeItem = new MyTreeItem(apps[i], Type.APP);
+          items.push(treeItem);
+        }
+      }
     }
-    return item;
+    return items;
   }
   getParent?(element: TreeItem): vscode.ProviderResult<TreeItem> {
     throw new Error('getParent not implemented.');

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { addPhone, getPhones, removePhone } from './config';
-import { checkIsIp as checkIsIpValid } from './util';
+import { addApp, addPhone, getPhones, removePhone } from './config';
+import { checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
 import { leakReporter } from './leak-reporter';
@@ -12,9 +12,10 @@ export function activate(context: vscode.ExtensionContext) {
   const treeDataProvider = new MyTreeViewDataProvider();
   vscode.window.registerTreeDataProvider("addr2line:main", treeDataProvider);
 
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', () => {
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
     vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
   }));
+
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.connectPhone',
     async (treeItem: MyTreeItem) => {
       if (treeItem && typeof treeItem.label === 'string') {
@@ -32,24 +33,39 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addApk', async () => {
+    const preValue = "com.";
+    const pkg = await vscode.window.showInputBox({ title: "请输入APK包名", value: preValue, valueSelection: [preValue.length, preValue.length] });
+    if (!pkg) { return; };
+    const ret1 = checkAppValid(pkg);
+    if (ret1.err) {
+      log.output(ret1.msg);
+      return;
+    }
 
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addPhone',
-    async () => {
-      const preValue = "192.168.1.";
-      const ip = await vscode.window.showInputBox({ title: "请输入手机IP", value: preValue, valueSelection: [preValue.length, preValue.length] });
-      if (!ip) { return; }
-      const ret1 = checkIsIpValid(ip);
-      if (ret1.err) {
-        log.output(`${ret1.msg}`);
-        return;
-      }
-      const ret2 = await addPhone(ip);
-      if (!ret2.err) {
-        treeDataProvider.refresh();
-      } else {
-        log.output(`添加IP失败:${ret2.msg}`);
-      }
-    }));
+    const ret2 = await addApp(pkg);
+    if (!ret2.err) {
+      treeDataProvider.refresh();
+    } else {
+      log.output(`添加app失败:${ret2.msg}`);
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addPhone', async () => {
+    const preValue = "192.168.1.";
+    const ip = await vscode.window.showInputBox({ title: "请输入手机IP", value: preValue, valueSelection: [preValue.length, preValue.length] });
+    if (!ip) { return; }
+    const ret1 = checkIsIpValid(ip);
+    if (ret1.err) {
+      log.output(`${ret1.msg}`);
+      return;
+    }
+    const ret2 = await addPhone(ip);
+    if (!ret2.err) {
+      treeDataProvider.refresh();
+    } else {
+      log.output(`添加IP失败:${ret2.msg}`);
+    }
+  }));
 }
 
 export function deactivate() { }

@@ -1,10 +1,32 @@
 import * as vscode from "vscode";
 const id = "a2la";
 const KeyPhones = 'phones';
+const KeyApps = 'apps';
 export function getPhones() {
   const config = vscode.workspace.getConfiguration(id);
   return config.get<string[]>(KeyPhones, []);
 }
+
+export function getApps() {
+  const config = vscode.workspace.getConfiguration(id);
+  return config.get<string[]>(KeyApps, []);
+}
+
+export async function addApp(app: string): Promise<{ err: number, msg: string }> {
+  const ret = { err: 0, msg: '' }
+  const config = vscode.workspace.getConfiguration(id);
+  const apps = getApps();
+  if (!apps.find(el => el === app)) {
+    apps.push(app);
+    await config.update(KeyApps, apps);
+    return ret;
+  } else {
+    ret.err = 1;
+    ret.msg = `发现相同的APP:${app}`;
+    return ret;
+  }
+}
+
 export async function addPhone(ip: string): Promise<{ err: number, msg: string }> {
   const ret = { err: 0, msg: '' }
   const config = vscode.workspace.getConfiguration(id);
