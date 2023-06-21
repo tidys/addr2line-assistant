@@ -30,13 +30,22 @@
         "a2la.leak-file": {
           "type": "string",
           "default": "",
-          "description": "内存泄露报告文件"
+          "description": "远程设备上的内存泄露报告文件"
+        },
+        "a2la.local-files": {
+          "type": "object",
+          "default": {},
+          "description": "本地缓存文件"
         }
       }
     },
     "commands": [
       {
         "command": "addr2line-assistant.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "addr2line-assistant.showLeakFile",
         "title": "Hello World"
       },
       {

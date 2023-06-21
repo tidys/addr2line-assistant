@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { TreeItem } from "vscode"
-import { getApps, getIPS } from './config';
+import { TreeItem } from "vscode";
+import { getApps, getIPS, getLocalFiles } from './config';
 import { log } from './log';
 import { execSync } from 'child_process';
 
@@ -8,11 +8,13 @@ enum Type {
   NONE = 'none',
   IP = 'ip',
   APP = 'app',
+  Leak = 'leak',
 }
 export class MyTreeItem extends vscode.TreeItem {
   public type: Type = Type.NONE;
   public ip: string = '';
   public app: string = '';
+  public file: string = '';
   constructor(label: string, type: Type) {
     super(label, vscode.TreeItemCollapsibleState.Collapsed);
     this.label = label;
@@ -20,10 +22,14 @@ export class MyTreeItem extends vscode.TreeItem {
     this.contextValue = type;
     switch (type) {
       case Type.APP: {
+
+        break;
+      }
+      case Type.Leak: {
         this.command = {
-          title: '1111',
-          command: 'addr2line-assistant.helloWorld',
-          tooltip: "111",
+          title: 'show leak',
+          command: 'addr2line-assistant.showLeakFile',
+          tooltip: "show leak",
           arguments: [this]
         };
         break;
@@ -63,6 +69,14 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
           const treeItem = new MyTreeItem(apps[i], Type.APP);
           treeItem.ip = element.ip;
           treeItem.app = apps[i];
+          items.push(treeItem);
+        }
+      } else if (type === Type.APP) {
+        // show leak files
+        const files = getLocalFiles(element.ip, element.app);
+        for (let i = 0; i < files.length; i++) {
+          const treeItem = new MyTreeItem(files[i], Type.Leak);
+          treeItem.file = files[i];
           items.push(treeItem);
         }
       }

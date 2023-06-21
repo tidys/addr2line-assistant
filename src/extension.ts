@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles } from './config';
 import { ERROR, checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -15,9 +15,19 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
     vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.showLeakFile', (treeItem: MyTreeItem) => {
+    if (treeItem) {
+      vscode.window.showInformationMessage(treeItem.file);
+    }
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.pullLeakFile',
     async (treeItem: MyTreeItem) => {
-      leakReporter.pullReportFile(treeItem.ip, treeItem.app);
+      const { ip, app } = treeItem;
+      const localFile = await leakReporter.pullReportFile(ip, app);
+      if (localFile) {
+        await addLocalFiles(ip, app, localFile);
+        treeDataProvider.refresh();
+      }
     }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.setleakfile', async (param) => {
     let preValue = getLeakFile();
@@ -52,6 +62,8 @@ export function activate(context: vscode.ExtensionContext) {
       if (treeItem.label && typeof treeItem.label === 'string') {
         const ret = await removeAPP(treeItem.label);
         if (!ret.err) {
+          const { ip, app } = treeItem;
+          await removeLocalFiles(ip, app, null);
           treeDataProvider.refresh();
         } else {
           log.output(`删除APP失败:${ret.msg}`);

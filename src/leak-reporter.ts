@@ -3,7 +3,7 @@ import { execSync, execFile } from "child_process";
 import * as readline from "readline";
 import * as ADbDriver from "adb-driver";
 import { Log, log } from "./log";
-import { getLeakFile } from "./config";
+import { addLocalFiles, getKey, getLeakFile } from "./config";
 import { tmpdir, homedir } from "os"
 import { ensureFileSync } from "fs-extra"
 import { join } from "path";
@@ -25,6 +25,8 @@ class LeakReporter {
       log.output(ret);
       if (ret.startsWith("connected to") || ret.startsWith("already connected to")) {
         log.output("连接手机成功");
+      } else {
+        log.output('连接手机失败');
       }
     }
     // execFile(adbFile, args, (error, stdout, stderr) => {
@@ -56,8 +58,11 @@ class LeakReporter {
       log.output(cmd);
       const ret: string = await ADbDriver.execADBCommand(cmd);
       log.output(ret);
-    }
+      // todo 判断拉取成功
 
+      return localFile;
+    }
+    return null;
   }
   async remoteDevicesFileExist(file: string) {
     if (ADbDriver.isSystemAdbAvailable()) {
