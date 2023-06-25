@@ -143,7 +143,7 @@
         },
         {
           "command": "addr2line-assistant.addr2line",
-          "when": "view==addr2line:main && viewItem==leak-file",
+          "when": "view==addr2line:main && viewItem==leak-file && false",
           "group": "inline"
         }
       ]

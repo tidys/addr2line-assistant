@@ -35,7 +35,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addr2line', async (treeItem: MyTreeItem) => {
     if (treeItem) {
       const { file } = treeItem;
-      await leakReporter.parse(file);
+      console.log(file);
+      // await leakReporter.parse(file);
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.showLeakStack', async (treeItem: MyTreeItem) => {

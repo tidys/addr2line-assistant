@@ -129,6 +129,7 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
             }
             const stackTreeItem = new MyTreeItem(label, Type.LeakResultStack, vscode.TreeItemCollapsibleState.None);
             stackTreeItem.source = sourcemap;
+            stackTreeItem.tooltip = sourcemap;
             items.push(stackTreeItem);
           }
         }

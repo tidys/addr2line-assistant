@@ -81,7 +81,6 @@ class LeakReporter {
         leakAddress.addr2line();
         for (let i = 0; i < stackArray.length; i++) {
           const item = stackArray[i];
-          item.showDetails();
         }
         rejects({ stacks: stackArray, address: leakAddress });
       });
