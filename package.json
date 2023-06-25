@@ -55,7 +55,11 @@
       },
       {
         "command": "addr2line-assistant.showLeakFile",
-        "title": "Hello World"
+        "title": "show leak file"
+      },
+      {
+        "command": "addr2line-assistant.showLeakStack",
+        "title": "show leak stack"
       },
       {
         "command": "addr2line-assistant.setleakfile",
@@ -139,7 +143,7 @@
         },
         {
           "command": "addr2line-assistant.addr2line",
-          "when": "view==addr2line:main && viewItem==leak",
+          "when": "view==addr2line:main && viewItem==leak-file",
           "group": "inline"
         }
       ]
