@@ -7,17 +7,10 @@ import { addLocalFiles, getKey, getLeakFile } from "./config";
 import { tmpdir, homedir } from "os"
 import { ensureFileSync } from "fs-extra"
 import { join } from "path";
-const soFiles = "";
-class LeakResult {
-  public address: string[] = [];
-  doAddr2line() {
-    const cmd = `addr2line -f -C -e ${soFiles} ${this.address.join(" ")}`;
-    execSync(cmd);
-  }
-}
+import { LeakAddress, LeakStack } from "./leak-stack";
+
 
 class LeakReporter {
-  leaks: LeakResult[] = [];
   async connectIP(ip: string) {
     log.output(`connecting ${ip}`);
     if (ADbDriver.isSystemAdbAvailable()) {
@@ -29,14 +22,6 @@ class LeakReporter {
         log.output('连接手机失败');
       }
     }
-    // execFile(adbFile, args, (error, stdout, stderr) => {
-    //   if (error) {
-    //     log.output(error.message);
-    //   }
-    //   if (stdout) {
-    //     log.output(stdout);
-    //   }
-    // });
   }
   async pullReportFile(ip: string, app: string) {
     if (ADbDriver.isSystemAdbAvailable()) {
@@ -64,7 +49,7 @@ class LeakReporter {
     }
     return null;
   }
-  async remoteDevicesFileExist(file: string) {
+  private async remoteDevicesFileExist(file: string) {
     if (ADbDriver.isSystemAdbAvailable()) {
       const cmd = `adb shell ls ${file}`;
       const ret: string = await ADbDriver.execADBCommand(cmd);
@@ -78,16 +63,24 @@ class LeakReporter {
   }
   async parse(file: string) {
     return new Promise((resolve, rejects) => {
+      LeakAddress.clean();
+      const stackArray: LeakStack[] = [];
       const rl = readline.createInterface({
         input: createReadStream(file),
         crlfDelay: Infinity
       });
       rl.on('line', (line) => {
-
-        // if ($line =~ /^leak, time=([\d.]*), stack=([\w ]*), size=(\d*), data=.*/) {
-
+        const stack = new LeakStack();
+        if (stack.parseLine(line)) {
+          stackArray.push(stack);
+        }
       });
-      rl.on('close', () => {
+      rl.on('close', async () => {
+        await LeakAddress.addr2line();
+        for (let i = 0; i < stackArray.length; i++) {
+          const item = stackArray[i];
+          item.showDetails();
+        }
         rejects();
       });
     });

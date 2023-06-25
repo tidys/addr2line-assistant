@@ -5,10 +5,20 @@ const KEY_IPS = 'ips';
 const KEY_APPS = 'apps';
 const KEY_LEAK_FILE = "leak-file";
 const KEY_LOCAL_FILES = "local-files";
+const KEY_EXECUTABLE_FILE = "executable-file";
 
 export function getKey(ip: string, app: string) {
   return `${ip}-${app}`;
 }
+export function getExecutableFile(): string {
+  const config = vscode.workspace.getConfiguration(id);
+  return config.get(KEY_EXECUTABLE_FILE, "");
+}
+export async function setExecutableFile(file: string) {
+  const config = vscode.workspace.getConfiguration(id);
+  return await config.update(KEY_EXECUTABLE_FILE, file);
+}
+
 
 export function getLocalFiles(ip: string, app: string): string[] {
   const key = getKey(ip, app);

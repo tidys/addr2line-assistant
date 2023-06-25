@@ -15,8 +15,8 @@ export class MyTreeItem extends vscode.TreeItem {
   public ip: string = '';
   public app: string = '';
   public file: string = '';
-  constructor(label: string, type: Type) {
-    super(label, vscode.TreeItemCollapsibleState.Collapsed);
+  constructor(label: string, type: Type, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed) {
+    super(label, state);
     this.label = label;
     this.type = type;
     this.contextValue = type;
@@ -75,7 +75,7 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
         // show leak files
         const files = getLocalFiles(element.ip, element.app);
         for (let i = 0; i < files.length; i++) {
-          const treeItem = new MyTreeItem(files[i], Type.Leak);
+          const treeItem = new MyTreeItem(files[i], Type.Leak, vscode.TreeItemCollapsibleState.None);
           treeItem.file = files[i];
           items.push(treeItem);
         }

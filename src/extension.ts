@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile } from './config';
 import { ERROR, checkAppValid, checkIsIpValid } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
 import { leakReporter } from './leak-reporter';
+import { existsSync } from 'fs';
+import { assets } from './assets';
 
 export function activate(context: vscode.ExtensionContext) {
-
+  assets.init(context);
   log.initLog();
 
   const treeDataProvider = new MyTreeViewDataProvider();
@@ -15,9 +17,35 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
     vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.set-executable-file', async () => {
+    const uri = await vscode.window.showOpenDialog({
+      title: "请选择带有调试符号的leak可执行文件",
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: false,
+      filters: {
+        "so": ['so']
+      }
+    });
+    if (uri && uri.length) {
+      const file = uri[0].fsPath;
+      await setExecutableFile(file);
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addr2line', async (treeItem: MyTreeItem) => {
+    if (treeItem) {
+      const { file } = treeItem;
+      await leakReporter.parse(file);
+    }
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.showLeakFile', (treeItem: MyTreeItem) => {
     if (treeItem) {
-      vscode.window.showInformationMessage(treeItem.file);
+      const { file } = treeItem;
+      if (existsSync(file)) {
+        vscode.workspace.openTextDocument(file).then(doc => {
+          vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+        });
+      }
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.pullLeakFile',
