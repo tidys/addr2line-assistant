@@ -1,26 +1,27 @@
 import { execSync } from "child_process";
 import { log } from "./log";
-import { commandSync } from 'execa'
+import { commandSync } from 'execa';
 import { assets } from "./assets";
 // const { addr2line } = require('addr2line')
 // @ts-ignore
 import { addr2line } from 'addr2line';
 import { getExecutableFile } from "./config";
 import { normalize } from "path";
+import { parseSourcemap } from "./util";
 export class LeakAddress {
-  public static address: Record<string, string> = {};
-  public static clean() {
+  public address: Record<string, string> = {};
+  public clean() {
     this.address = {};
   }
-  public static add(addr: string) {
+  public add(addr: string) {
     if (!this.address[addr]) {
       this.address[addr] = 'unknown';
     }
   }
-  public static get(addr: string) {
+  public get(addr: string) {
     return this.address[addr];
   }
-  private static useNpmPkg(soFile: string, addr: string[]) {
+  private useNpmPkg(soFile: string, addr: string[]) {
     addr2line([soFile], addr).then((res: string) => {
       console.log(res);
     }).catch((err: Error) => {
@@ -29,7 +30,7 @@ export class LeakAddress {
       log.output(err.message);
     });
   }
-  public static async addr2line() {
+  public addr2line() {
     const keys = Object.keys(this.address);
     const soFile = getExecutableFile();
     if (!soFile) { return; }
@@ -38,22 +39,20 @@ export class LeakAddress {
     for (const addr in this.address) {
       // -f 函数名
       const cmd = `${addr2lineFile} -C -e ${soFile} ${addr}`;
-      const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8' })
+      const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8' });
       if (stderr) {
         log.output(stderr);
       }
       if (stdout) {
-        const matches = stdout.match(/(.*):(\d+)$/);
-        if (matches?.length === 3) {
-          const file = matches[1];
-          const line = matches[2];
-          const normalizeFile = normalize(file);
-          this.address[addr] = `${normalizeFile}:${line}`;
-        } else {
-
+        const result = parseSourcemap(stdout);
+        if (result) {
+          const { file, line } = result;
+          this.address[addr] = `${file}:${line}`;
+        }
+        else {
           this.address[addr] = stdout;
         }
-        console.log(stdout)
+        console.log(stdout);
       }
     }
   }
@@ -62,18 +61,17 @@ export class LeakAddress {
 export class LeakStack {
   private size: number = 0;
   private time: string = '';
-  private address: string[] = [];
-  parseLine(line: string) {
+  public address: string[] = [];
+  parseLine(line: string, leakAddress: LeakAddress) {
     // if ($line =~ /^leak, time=([\d.]*), stack=([\w ]*), size=(\d*), data=.*/) {
     const matches = line.match(/^leak, time=([\d.]*), stack=([\w ]*), size=(\d*), data=.*/);
-    console.log(matches);
     if (matches && matches.length >= 4) {
       const stack = matches[2];
       const arr = stack.split(' ');
       for (let i = 0; i < arr.length; i++) {
         const item = arr[i];
         if (item) {
-          LeakAddress.add(item);
+          leakAddress.add(item);
           this.address.push(item);
         }
       }
@@ -83,13 +81,9 @@ export class LeakStack {
     }
     return false;
   }
-  showDetails() {
+
+  getTitle() {
     const head = `${this.size} bytes lost in blocks ( one of them allocated at ${this.time}.), from following call stack:`;
-    log.output(head)
-    for (let i = 0; i < this.address.length; i++) {
-      const addr = this.address[i];
-      const str = LeakAddress.get(addr);
-      log.output(str);
-    }
+    return head;
   }
 }

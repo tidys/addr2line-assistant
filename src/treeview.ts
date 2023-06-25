@@ -3,18 +3,26 @@ import { TreeItem } from "vscode";
 import { getApps, getIPS, getLocalFiles } from './config';
 import { log } from './log';
 import { execSync } from 'child_process';
+import { leakReporter } from './leak-reporter';
+import { readFileSync } from 'fs';
+import { LeakAddress, LeakStack } from './leak-stack';
+import { parseSourcemap } from './util';
+import { basename } from 'path';
 
 enum Type {
   NONE = 'none',
   IP = 'ip',
   APP = 'app',
-  Leak = 'leak',
+  LeakFile = 'leak-file',
+  LeakResultTitle = 'leak-result-title',
+  LeakResultStack = 'leak-result-stack'
 }
 export class MyTreeItem extends vscode.TreeItem {
   public type: Type = Type.NONE;
   public ip: string = '';
   public app: string = '';
   public file: string = '';
+  public source: string = "";
   constructor(label: string, type: Type, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed) {
     super(label, state);
     this.label = label;
@@ -25,13 +33,22 @@ export class MyTreeItem extends vscode.TreeItem {
 
         break;
       }
-      case Type.Leak: {
+      case Type.LeakFile: {
         this.command = {
-          title: 'show leak',
+          title: 'show leak file',
           command: 'addr2line-assistant.showLeakFile',
-          tooltip: "show leak",
+          tooltip: "show leak file",
           arguments: [this]
         };
+        break;
+      }
+      case Type.LeakResultStack: {
+        this.command = {
+          title: 'show leak stack',
+          command: 'addr2line-assistant.showLeakStack',
+          tooltip: "show leak stack",
+          arguments: [this]
+        }
         break;
       }
     }
@@ -50,8 +67,8 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
   getTreeItem(element: TreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
     return element;
   }
-  getChildren(element?: MyTreeItem): vscode.ProviderResult<TreeItem[]> {
-    const items = [];
+  getChildren(element?: MyTreeItem): vscode.ProviderResult<MyTreeItem[]> {
+    const items: MyTreeItem[] = [];
     if (!element) {
       // root: 去配置里面查找ip
       const ips = getIPS();
@@ -75,9 +92,45 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
         // show leak files
         const files = getLocalFiles(element.ip, element.app);
         for (let i = 0; i < files.length; i++) {
-          const treeItem = new MyTreeItem(files[i], Type.Leak, vscode.TreeItemCollapsibleState.None);
+          const treeItem = new MyTreeItem(files[i], Type.LeakFile);
           treeItem.file = files[i];
           items.push(treeItem);
+        }
+      } else if (type === Type.LeakFile) {
+        const { file } = element;
+        const data = readFileSync(file, 'utf-8');
+        const lines = data.split('\n');
+        const leakAddress = new LeakAddress();
+        const stackArray: LeakStack[] = [];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const stack = new LeakStack();
+          if (line && stack.parseLine(line, leakAddress)) {
+            stackArray.push(stack);
+          }
+        }
+        leakAddress.addr2line();
+        for (let i = 0; i < stackArray.length; i++) {
+          const item = stackArray[i];
+
+          const titleTreeItem = new MyTreeItem(item.getTitle(), Type.LeakResultTitle, vscode.TreeItemCollapsibleState.None);
+          titleTreeItem.source = "";
+          items.push(titleTreeItem);
+          for (let count = 0; count < item.address.length; count++) {
+            const addr = item.address[count];
+            const sourcemap = leakAddress.get(addr);
+            const result = parseSourcemap(sourcemap);
+            let label = "";
+            if (result) {
+              const { file, line } = result;
+              label = `    ${addr} ${basename(file)}`;
+            } else {
+              label = `    ${addr}`;
+            }
+            const stackTreeItem = new MyTreeItem(label, Type.LeakResultStack, vscode.TreeItemCollapsibleState.None);
+            stackTreeItem.source = sourcemap;
+            items.push(stackTreeItem);
+          }
         }
       }
     }

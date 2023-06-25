@@ -1,3 +1,5 @@
+import { normalize } from "path";
+
 export function checkLeakFileValid(file: string): { err: number, msg: string } {
   const ret = { err: 0, msg: '' };
   return ret;
@@ -16,6 +18,15 @@ export enum ERROR {
   NO_PORT = 1,
 }
 
+export function parseSourcemap(sourcemap: string): { file: string, line: number } | null {
+  const matches = sourcemap.match(/(.*):(\d+)$/);
+  if (matches?.length === 3) {
+    const file = normalize(matches[1]);
+    const line = parseInt(matches[2]);
+    return { file, line };
+  }
+  return null;
+}
 export function checkIsIpValid(str: string): { err: number, msg: string } {
   const ret = { err: 0, msg: '' };
 

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile } from './config';
-import { ERROR, checkAppValid, checkIsIpValid } from './util';
+import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
 import { leakReporter } from './leak-reporter';
@@ -36,6 +36,25 @@ export function activate(context: vscode.ExtensionContext) {
     if (treeItem) {
       const { file } = treeItem;
       await leakReporter.parse(file);
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.showLeakStack', async (treeItem: MyTreeItem) => {
+    if (treeItem) {
+      const { source } = treeItem;
+      const result = parseSourcemap(source);
+      if (result) {
+        const { file, line } = result;
+        if (existsSync(file)) {
+          log.output(source);
+          vscode.workspace.openTextDocument(file).then(doc => {
+            vscode.window.showTextDocument(doc, { selection: new vscode.Range(line - 1, 0, line - 1, 0) });
+          });
+        } else {
+          log.output(`文件不存在：${source}`);
+        }
+      } else {
+        log.output(`无法打开：${source}`);
+      }
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.showLeakFile', (treeItem: MyTreeItem) => {

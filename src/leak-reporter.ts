@@ -61,9 +61,11 @@ class LeakReporter {
     }
     return false;
   }
-  async parse(file: string) {
+
+  async parse(file: string): Promise<{ stacks: LeakStack[], address: LeakAddress }> {
     return new Promise((resolve, rejects) => {
-      LeakAddress.clean();
+      const leakAddress = new LeakAddress();
+
       const stackArray: LeakStack[] = [];
       const rl = readline.createInterface({
         input: createReadStream(file),
@@ -71,17 +73,17 @@ class LeakReporter {
       });
       rl.on('line', (line) => {
         const stack = new LeakStack();
-        if (stack.parseLine(line)) {
+        if (stack.parseLine(line, leakAddress)) {
           stackArray.push(stack);
         }
       });
       rl.on('close', async () => {
-        await LeakAddress.addr2line();
+        leakAddress.addr2line();
         for (let i = 0; i < stackArray.length; i++) {
           const item = stackArray[i];
           item.showDetails();
         }
-        rejects();
+        rejects({ stacks: stackArray, address: leakAddress });
       });
     });
 
