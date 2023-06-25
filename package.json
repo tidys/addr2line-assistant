@@ -169,6 +169,11 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
+  "publisher": "xuyanfeng",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tidys/addr2line-assistant.git"
+  },
   "devDependencies": {
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.1",
