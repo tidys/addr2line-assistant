@@ -1,4 +1,4 @@
-这个插件是分析leak-tracer的内存泄露日志，leak-tracer也有解析日志的脚步，但是并不是太好用。
+这个插件是分析leak-tracer的内存泄露日志，leak-tracer也有解析日志的脚本，但是并不是太好用。
 
 > 目前仅支持windows
 ## 使用前的配置
