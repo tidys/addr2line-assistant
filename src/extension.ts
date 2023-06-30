@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
 import { leakReporter } from './leak-reporter';
 import { existsSync } from 'fs';
 import { assets } from './assets';
+import { spawn } from 'child_process';
 
 export function activate(context: vscode.ExtensionContext) {
   assets.init(context);
@@ -44,6 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
       canSelectFiles: true,
       canSelectFolders: false,
       canSelectMany: false,
+      defaultUri: vscode.Uri.file(getExecutableFile()),
       filters: {
         "so": ['so']
       }
@@ -51,6 +53,20 @@ export function activate(context: vscode.ExtensionContext) {
     if (uri && uri.length) {
       const file = uri[0].fsPath;
       await setExecutableFile(file);
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.show-executable-file', async () => {
+    function openInFileExplorer(filePath: string) {
+      const command = process.platform === 'win32' ? 'explorer' : 'open';
+      const cmdArgs = process.platform === 'win32' ? [filePath] : ['-R', filePath];
+
+      spawn(command, cmdArgs);
+    }
+    const file = getExecutableFile();
+    if (existsSync(file)) {
+      vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(file));
+    } else {
+      log.output(`文件不存在：${file}`);
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addr2line', async (treeItem: MyTreeItem) => {

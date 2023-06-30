@@ -58,6 +58,10 @@
         "title": "set executable file"
       },
       {
+        "command": "addr2line-assistant.show-executable-file",
+        "title": "show executable file"
+      },
+      {
         "command": "addr2line-assistant.showLeakFile",
         "title": "show leak file"
       },
