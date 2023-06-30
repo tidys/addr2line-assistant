@@ -8,6 +8,7 @@ import { addr2line } from 'addr2line';
 import { getExecutableFile } from "./config";
 import { dirname, normalize } from "path";
 import { parseSourcemap } from "./util";
+import { existsSync } from "fs";
 export class LeakAddress {
   public address: Record<string, string> = {};
   public clean() {
@@ -33,14 +34,14 @@ export class LeakAddress {
   public addr2line() {
     const keys = Object.keys(this.address);
     const soFile = getExecutableFile();
-    if (!soFile) {
-      log.output("No executable file");
+    if (!soFile || !existsSync(soFile)) {
+      log.output(`No executable file:${soFile}`);
       return;
     }
     // const addrList = Object.keys(this.address).join(" ");
     const addr2lineFile = assets.getAddr2lineExecutable();
-    if (!addr2lineFile) {
-      log.output("No addr2line file");
+    if (!addr2lineFile || !existsSync(addr2lineFile)) {
+      log.output(`No addr2line file: ${addr2lineFile}`);
       return;
     }
     let idx = 0, total = Object.keys(this.address).length;
@@ -93,7 +94,8 @@ export class LeakStack {
   }
 
   getTitle() {
-    const head = `${this.size} bytes lost in blocks ( one of them allocated at ${this.time}.), from following call stack:`;
+    const kb = this.size / 1024;
+    const head = `${this.size} bytes / ${kb.toFixed(0)} kb  lost in blocks ( one of them allocated at ${this.time}.), from following call stack:`;
     return head;
   }
 }
