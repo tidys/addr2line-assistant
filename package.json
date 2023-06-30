@@ -9,9 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:addr2line-assistant.helloWorld"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -41,13 +39,19 @@
           "type": "string",
           "default": "",
           "description": "携带调试符号的可执行文件"
+        },
+        "a2la.leak-rank": {
+          "type": "number",
+          "default": 20,
+          "description": "过滤内存泄露的结果，只展示排行前几名"
         }
       }
     },
     "commands": [
       {
-        "command": "addr2line-assistant.helloWorld",
-        "title": "Hello World"
+        "command": "addr2line-assistant.set-leak-rank",
+        "title": "set leak rank",
+        "description": "设置只展示内存泄露的前几名"
       },
       {
         "command": "addr2line-assistant.set-executable-file",

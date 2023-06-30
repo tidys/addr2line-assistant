@@ -70,10 +70,10 @@ export class LeakAddress {
 }
 
 export class LeakStack {
-  private size: number = 0;
+  public size: number = 0;
   private time: string = '';
   public address: string[] = [];
-  parseLine(line: string, leakAddress: LeakAddress) {
+  parseLine(line: string) {
     // if ($line =~ /^leak, time=([\d.]*), stack=([\w ]*), size=(\d*), data=.*/) {
     const matches = line.match(/^leak, time=([\d.]*), stack=([\w ]*), size=(\d*), data=.*/);
     if (matches && matches.length >= 4) {
@@ -82,7 +82,6 @@ export class LeakStack {
       for (let i = 0; i < arr.length; i++) {
         const item = arr[i];
         if (item) {
-          leakAddress.add(item);
           this.address.push(item);
         }
       }

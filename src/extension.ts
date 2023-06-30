@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -14,8 +14,10 @@ export function activate(context: vscode.ExtensionContext) {
   const treeDataProvider = new MyTreeViewDataProvider();
   vscode.window.registerTreeDataProvider("addr2line:main", treeDataProvider);
 
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
-    vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.set-leak-rank', async () => {
+    const num = await vscode.window.showInputBox({ title: '请输入过滤数量', value: "20" })
+    if (!num) { return; }
+    await setLeakRank(parseInt(num));
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.modifyIP', async (treeItem: MyTreeItem) => {
     if (treeItem) {

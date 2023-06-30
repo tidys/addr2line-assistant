@@ -73,7 +73,8 @@ class LeakReporter {
       });
       rl.on('line', (line) => {
         const stack = new LeakStack();
-        if (stack.parseLine(line, leakAddress)) {
+        if (stack.parseLine(line)) {
+          stack.address.map(address => leakAddress.add(address));
           stackArray.push(stack);
         }
       });

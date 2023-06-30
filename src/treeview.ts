@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { TreeItem } from "vscode";
-import { getApps, getIPS, getLocalFiles } from './config';
+import { getApps, getIPS, getLeakRank, getLocalFiles } from './config';
 import { log } from './log';
 import { execSync } from 'child_process';
 import { leakReporter } from './leak-reporter';
@@ -100,16 +100,30 @@ export class MyTreeViewDataProvider implements vscode.TreeDataProvider<TreeItem>
         const { file } = element;
         const data = readFileSync(file, 'utf-8');
         const lines = data.split('\n');
-        const leakAddress = new LeakAddress();
-        const stackArray: LeakStack[] = [];
+        const allStackArray: LeakStack[] = [];
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
           const stack = new LeakStack();
-          if (line && stack.parseLine(line, leakAddress)) {
+          if (line && stack.parseLine(line)) {
+            allStackArray.push(stack);
+          }
+        }
+        // 取出排行前几名
+        const leakAddress = new LeakAddress();
+        const stackArray: LeakStack[] = [];
+        allStackArray.sort((a, b) => {
+          return b.size - a.size;
+        });
+        const rank = getLeakRank();
+        for (let i = 0; i < rank; i++) {
+          if (i < allStackArray.length) {
+            const stack = allStackArray[i];
+            stack.address.map(address => leakAddress.add(address));
             stackArray.push(stack);
           }
         }
         leakAddress.addr2line();
+        // 插入前几名的数据
         for (let i = 0; i < stackArray.length; i++) {
           const item = stackArray[i];
 
