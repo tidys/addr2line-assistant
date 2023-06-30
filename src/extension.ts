@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -16,6 +16,25 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.helloWorld', (param) => {
     vscode.window.showInformationMessage('Hello World from addr2line-assistant!');
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.modifyIP', async (treeItem: MyTreeItem) => {
+    if (treeItem) {
+      // 大部分情况下都是修改端口
+      const { ip } = treeItem;
+      let selectBeginIndex = ip.indexOf(":") + 1;
+      const newIP = await vscode.window.showInputBox({ title: "请输入", value: ip, valueSelection: [selectBeginIndex, ip.length] });
+      if (!newIP) { return; }
+      let ret = checkIsIpValid(newIP);
+      if (ret.err !== ERROR.OK) {
+        log.output(`无效的IP:${newIP}`);
+        return;
+      }
+
+      ret = await modifyIP(ip, newIP);
+      if (!ret.err) {
+        treeDataProvider.refresh();
+      }
+    }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.set-executable-file', async () => {
     const uri = await vscode.window.showOpenDialog({

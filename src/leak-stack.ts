@@ -6,7 +6,7 @@ import { assets } from "./assets";
 // @ts-ignore
 import { addr2line } from 'addr2line';
 import { getExecutableFile } from "./config";
-import { normalize } from "path";
+import { dirname, normalize } from "path";
 import { parseSourcemap } from "./util";
 export class LeakAddress {
   public address: Record<string, string> = {};
@@ -33,13 +33,25 @@ export class LeakAddress {
   public addr2line() {
     const keys = Object.keys(this.address);
     const soFile = getExecutableFile();
-    if (!soFile) { return; }
+    if (!soFile) {
+      log.output("No executable file");
+      return;
+    }
     // const addrList = Object.keys(this.address).join(" ");
     const addr2lineFile = assets.getAddr2lineExecutable();
+    if (!addr2lineFile) {
+      log.output("No addr2line file");
+      return;
+    }
+    let idx = 0, total = Object.keys(this.address).length;
     for (const addr in this.address) {
+      idx++;
+      const tip = `addr2line process: ${addr} [${idx}/${total}]`;
+      log.output(tip);
+      console.log(tip);
       // -f 函数名
       const cmd = `${addr2lineFile} -C -e ${soFile} ${addr}`;
-      const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8' });
+      const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8', cwd: dirname(addr2lineFile) });
       if (stderr) {
         log.output(stderr);
       }
@@ -52,7 +64,6 @@ export class LeakAddress {
         else {
           this.address[addr] = stdout;
         }
-        console.log(stdout);
       }
     }
   }

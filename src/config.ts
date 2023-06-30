@@ -118,6 +118,43 @@ export async function addIP(ip: string): Promise<{ err: number, msg: string }> {
     return ret;
   }
 }
+export async function modifyIP(oldIP: string, newIP: string): Promise<{ err: number, msg: string }> {
+  const ret = { err: 0, msg: '' };
+  const config = vscode.workspace.getConfiguration(id);
+  const ips = getIPS();
+  let find = false;
+  for (let i = 0; i < ips.length; i++) {
+    if (ips[i] === oldIP) {
+      ips[i] = newIP;
+      await config.update(KEY_IPS, ips);
+      find = true;
+      break;
+    }
+  }
+  if (find) {
+    // 修改files
+    const addLocalFiles: Record<string, string[]> = config.get<Record<string, string[]>>(KEY_LOCAL_FILES, {});
+    const newAddLocalFiles: Record<string, string[]> = {};
+    let replace = false;
+
+    for (let key in addLocalFiles) {
+      if (key.indexOf(oldIP) !== -1) {
+        const newKey = key.replace(oldIP, newIP);
+        newAddLocalFiles[newKey] = addLocalFiles[key];
+        replace = true;
+      } else {
+        newAddLocalFiles[key] = addLocalFiles[key];
+      }
+    }
+    if (replace) {
+      await config.update(KEY_LOCAL_FILES, newAddLocalFiles);
+    }
+  } else {
+    ret.err = 1;
+    ret.msg = `修改失败，没有找打 ${oldIP}`;
+  }
+  return ret;
+}
 export async function removeAPP(pkg: string): Promise<{ err: number, msg: string }> {
   const ret = { err: 0, msg: '' };
   const config = vscode.workspace.getConfiguration(id);

@@ -15,6 +15,7 @@ export function checkAppValid(pkg: string): { err: number, msg: string } {
   return ret;
 }
 export enum ERROR {
+  OK = 0,
   NO_PORT = 1,
 }
 
