@@ -1,6 +1,7 @@
 import { execSync } from "child_process";
 import { log } from "./log";
 import { commandSync } from 'execa';
+import * as vscode from 'vscode';
 import { assets } from "./assets";
 // const { addr2line } = require('addr2line')
 // @ts-ignore
@@ -31,18 +32,22 @@ export class LeakAddress {
       log.output(err.message);
     });
   }
-  public addr2line() {
+  public async addr2line(): Promise<boolean> {
     const keys = Object.keys(this.address);
-    const soFile = getExecutableFile();
+    let soFile = getExecutableFile();
     if (!soFile || !existsSync(soFile)) {
       log.output(`No executable file:${soFile}`);
-      return;
+      await vscode.commands.executeCommand("addr2line-assistant.set-executable-file");
+      soFile = getExecutableFile();
+      if (!soFile) {
+        return false;
+      }
     }
     // const addrList = Object.keys(this.address).join(" ");
     const addr2lineFile = assets.getAddr2lineExecutable();
     if (!addr2lineFile || !existsSync(addr2lineFile)) {
       log.output(`No addr2line file: ${addr2lineFile}`);
-      return;
+      return false;
     }
     let idx = 0, total = Object.keys(this.address).length;
     for (const addr in this.address) {
@@ -67,6 +72,7 @@ export class LeakAddress {
         }
       }
     }
+    return true;
   }
 }
 

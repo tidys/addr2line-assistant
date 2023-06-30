@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -35,6 +35,18 @@ export function activate(context: vscode.ExtensionContext) {
 
       ret = await modifyIP(ip, newIP);
       if (!ret.err) {
+        treeDataProvider.refresh();
+      }
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.refresh', async () => {
+    treeDataProvider.refresh();
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.removeLeakFile', async (treeItem: MyTreeItem) => {
+    if (treeItem) {
+      const { ip, app, file } = treeItem;
+      const ret = await removeLocalFile(ip, app, file);
+      if (ret) {
         treeDataProvider.refresh();
       }
     }
@@ -116,10 +128,14 @@ export function activate(context: vscode.ExtensionContext) {
     }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.setleakfile', async (param) => {
     let preValue = getLeakFile();
-    if (!preValue) {
-      preValue = "files/Documents/leak_report.txt";
-    }
-    const ret = await vscode.window.showInputBox({ title: "设置内存泄露汇报文件地址(相对于APP)", value: preValue, valueSelection: [preValue.length, preValue.length] });
+    const ret = await vscode.window.showQuickPick([
+      "files/Download/leak_report.txt",
+      "files/Documents/leak_report.txt",
+    ], {
+      title: "设置内存泄露汇报文件地址(相对于APP)",
+      placeHolder: preValue,
+    });
+
     if (!ret) { return; }
     // 允许文件没有后缀
     await setLeakFile(ret);

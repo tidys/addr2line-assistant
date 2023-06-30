@@ -2,7 +2,7 @@
   "name": "addr2line-assistant",
   "displayName": "addr2line-assistant",
   "description": "",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.79.0"
   },
@@ -49,6 +49,11 @@
     },
     "commands": [
       {
+        "command": "addr2line-assistant.refresh",
+        "title": "refresh",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "addr2line-assistant.set-leak-rank",
         "title": "set leak rank",
         "description": "设置只展示内存泄露的前几名"
@@ -64,6 +69,10 @@
       {
         "command": "addr2line-assistant.showLeakFile",
         "title": "show leak file"
+      },
+      {
+        "command": "addr2line-assistant.removeLeakFile",
+        "title": "remove leak file"
       },
       {
         "command": "addr2line-assistant.showLeakStack",
@@ -132,6 +141,15 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "addr2line-assistant.removeLeakFile",
+          "when": "view==addr2line:main && viewItem==leak-file"
+        },
+        {
+          "command": "addr2line-assistant.refresh",
+          "when": "view==addr2line:main && viewItem==leak-file",
+          "group": "inline"
+        },
         {
           "command": "addr2line-assistant.modifyIP",
           "when": "view==addr2line:main && viewItem==ip",

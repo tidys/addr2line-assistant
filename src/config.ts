@@ -10,10 +10,10 @@ const KEY_LEAK_RANK = "leak-rank";
 export function getKey(ip: string, app: string) {
   return `${ip}-${app}`;
 }
-
+const cfgScope: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Global;
 export async function setLeakRank(rank: number) {
   const config = vscode.workspace.getConfiguration(id);
-  return await config.update(KEY_LEAK_RANK, rank);
+  return await config.update(KEY_LEAK_RANK, rank, cfgScope);
 }
 export function getLeakRank() {
   const config = vscode.workspace.getConfiguration(id);
@@ -26,7 +26,7 @@ export function getExecutableFile(): string {
 }
 export async function setExecutableFile(file: string) {
   const config = vscode.workspace.getConfiguration(id);
-  return await config.update(KEY_EXECUTABLE_FILE, file);
+  return await config.update(KEY_EXECUTABLE_FILE, file, cfgScope);
 }
 
 export function getLocalFiles(ip: string, app: string): string[] {
@@ -35,7 +35,25 @@ export function getLocalFiles(ip: string, app: string): string[] {
   const ret: Record<string, string[]> = config.get<Record<string, string[]>>(KEY_LOCAL_FILES, {});
   return ret[key] || [];
 }
-
+export async function removeLocalFile(ip: string, app: string, file: string): Promise<boolean> {
+  const config = vscode.workspace.getConfiguration(id);
+  const key = getKey(ip, app);
+  let ret: Record<string, string[]> = config.get<Record<string, string[]>>(KEY_LOCAL_FILES, {});
+  if (ret[key]) {
+    let arr = ret[key];
+    const idx = arr.findIndex(el => el === file);
+    if (idx !== -1) {
+      arr.splice(idx, 1);
+      ret[key] = arr;
+      await config.update(KEY_LOCAL_FILES, ret, cfgScope);
+      if (existsSync(file)) {
+        unlinkSync(file);
+      }
+      return true;
+    }
+  }
+  return false;
+}
 export async function addLocalFiles(ip: string, app: string, file: string) {
   const config = vscode.workspace.getConfiguration(id);
   const key = getKey(ip, app);
@@ -47,7 +65,7 @@ export async function addLocalFiles(ip: string, app: string, file: string) {
   const arr = ret[key];
   arr.push(file);
   ret[key] = arr;
-  await config.update(KEY_LOCAL_FILES, ret);
+  await config.update(KEY_LOCAL_FILES, ret, cfgScope);
 }
 
 export async function removeLocalFiles(ip: string, app: string, file: string | null) {
@@ -76,7 +94,7 @@ export async function removeLocalFiles(ip: string, app: string, file: string | n
       unlinkSync(deleFiles[i]);
     }
   }
-  await config.update(KEY_LOCAL_FILES, ret);
+  await config.update(KEY_LOCAL_FILES, ret, cfgScope);
 }
 export function getLeakFile() {
   const config = vscode.workspace.getConfiguration(id);
@@ -84,7 +102,7 @@ export function getLeakFile() {
 }
 export async function setLeakFile(file: string): Promise<boolean> {
   const config = vscode.workspace.getConfiguration(id);
-  await config.update(KEY_LEAK_FILE, file);
+  await config.update(KEY_LEAK_FILE, file, cfgScope);
   return true;
 }
 
@@ -104,7 +122,7 @@ export async function addApp(app: string): Promise<{ err: number, msg: string }>
   const apps = getApps();
   if (!apps.find(el => el === app)) {
     apps.push(app);
-    await config.update(KEY_APPS, apps);
+    await config.update(KEY_APPS, apps, cfgScope);
     return ret;
   } else {
     ret.err = 1;
@@ -119,7 +137,7 @@ export async function addIP(ip: string): Promise<{ err: number, msg: string }> {
   const ips = getIPS();
   if (!ips.find(el => el === ip)) {
     ips.push(ip);
-    await config.update(KEY_IPS, ips);
+    await config.update(KEY_IPS, ips, cfgScope);
     return ret;
   } else {
     ret.err = 1;
@@ -135,7 +153,7 @@ export async function modifyIP(oldIP: string, newIP: string): Promise<{ err: num
   for (let i = 0; i < ips.length; i++) {
     if (ips[i] === oldIP) {
       ips[i] = newIP;
-      await config.update(KEY_IPS, ips);
+      await config.update(KEY_IPS, ips, cfgScope);
       find = true;
       break;
     }
@@ -156,7 +174,7 @@ export async function modifyIP(oldIP: string, newIP: string): Promise<{ err: num
       }
     }
     if (replace) {
-      await config.update(KEY_LOCAL_FILES, newAddLocalFiles);
+      await config.update(KEY_LOCAL_FILES, newAddLocalFiles, cfgScope);
     }
   } else {
     ret.err = 1;
@@ -171,7 +189,7 @@ export async function removeAPP(pkg: string): Promise<{ err: number, msg: string
   const index = apps.findIndex(el => el === pkg);
   if (index !== -1) {
     apps.splice(index, 1);
-    await config.update(KEY_APPS, apps);
+    await config.update(KEY_APPS, apps, cfgScope);
     return ret;
   } else {
     ret.err = 1;
@@ -186,7 +204,7 @@ export async function removeIP(ip: string): Promise<{ err: number, msg: string }
   const index = ips.findIndex(el => el === ip);
   if (index !== -1) {
     ips.splice(index, 1);
-    await config.update(KEY_IPS, ips);
+    await config.update(KEY_IPS, ips, cfgScope);
     return ret;
   } else {
     ret.err = 1;
