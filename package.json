@@ -2,7 +2,8 @@
   "name": "addr2line-assistant",
   "displayName": "addr2line-assistant",
   "description": "",
-  "version": "0.0.3",
+  "icon": "./address.png",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.79.0"
   },
