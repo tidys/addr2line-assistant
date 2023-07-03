@@ -50,6 +50,10 @@
     },
     "commands": [
       {
+        "command": "addr2line-assistant.profile",
+        "title": "profile"
+      },
+      {
         "command": "addr2line-assistant.refresh",
         "title": "refresh",
         "icon": "$(refresh)"

@@ -4,9 +4,10 @@ import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
 import { leakReporter } from './leak-reporter';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { assets } from './assets';
 import { spawn } from 'child_process';
+import { join } from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
   assets.init(context);
@@ -38,6 +39,23 @@ export function activate(context: vscode.ExtensionContext) {
         treeDataProvider.refresh();
       }
     }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.profile', async () => {
+    const panel = vscode.window.createWebviewPanel("", "profile", vscode.ViewColumn.One, {
+      retainContextWhenHidden: true,
+      enableScripts: true
+    });
+    let html = readFileSync(join(context.extensionPath, "static", "profile", "index.html"), "utf-8");
+    const jsFile = join(context.extensionPath, "static", "profile", "index.js");
+    const indexJS = panel.webview.asWebviewUri(vscode.Uri.file(jsFile));
+    panel.webview.html = html.replace("${indexJS}", indexJS.toString());
+    panel.webview.onDidReceiveMessage((message: any) => {
+      console.log(message);
+    });
+    panel.onDidDispose(() => {
+
+    });
+    panel.webview.postMessage("from vscode");
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.refresh', async () => {
     treeDataProvider.refresh();
