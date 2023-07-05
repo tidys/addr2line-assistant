@@ -86,17 +86,12 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.show-executable-file', async () => {
-    function openInFileExplorer(filePath: string) {
-      const command = process.platform === 'win32' ? 'explorer' : 'open';
-      const cmdArgs = process.platform === 'win32' ? [filePath] : ['-R', filePath];
-
-      spawn(command, cmdArgs);
-    }
     const file = getExecutableFile();
     if (existsSync(file)) {
-      vscode.commands.executeCommand('revealInExplorer', vscode.Uri.file(file));
+      vscode.window.showInformationMessage(file);
+      vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(file));
     } else {
-      log.output(`文件不存在：${file}`);
+      vscode.window.showInformationMessage(`文件不存在：${file}`);
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addr2line', async (treeItem: MyTreeItem) => {
