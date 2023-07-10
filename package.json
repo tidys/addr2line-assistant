@@ -50,6 +50,10 @@
     },
     "commands": [
       {
+        "command": "addr2line-assistant.pull-leak-images",
+        "title": "pull leak images"
+      },
+      {
         "command": "addr2line-assistant.profile",
         "title": "profile"
       },

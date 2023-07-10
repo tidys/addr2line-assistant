@@ -7,7 +7,7 @@ export function checkLeakFileValid(file: string): { err: number, msg: string } {
 export function checkAppValid(pkg: string): { err: number, msg: string } {
   const ret = { err: 0, msg: '' };
   const arr = pkg.split('.');
-  if (arr.length !== 3) {
+  if (arr.length < 3) {
     ret.err = 1;
     ret.msg = "包名无效";
     return ret;

@@ -4,11 +4,12 @@ import * as readline from "readline";
 import * as ADbDriver from "adb-driver";
 import { Log, log } from "./log";
 import { addLocalFiles, getKey, getLeakFile } from "./config";
-import { tmpdir, homedir } from "os"
-import { ensureFileSync } from "fs-extra"
+import { tmpdir, homedir } from "os";
+import { ensureFileSync } from "fs-extra";
 import { join } from "path";
 import { LeakAddress, LeakStack } from "./leak-stack";
 import * as vscode from 'vscode';
+import { remoteDevicesFileExist } from "./adb";
 
 
 class LeakReporter {
@@ -37,7 +38,7 @@ class LeakReporter {
       }
       const remoteLeakFile = `${prefix}/${app}/${leakFile}`;
 
-      const b = await this.remoteDevicesFileExist(remoteLeakFile);
+      const b = await remoteDevicesFileExist(remoteLeakFile);
       if (!b) {
         log.output(`远程设备不存在文件：${remoteLeakFile}`);
         return;
@@ -45,7 +46,7 @@ class LeakReporter {
 
       //  /storage/emulated/0/Android/data/com.example.jni/files/Documents/leak_report.txt
       const time = (new Date()).getTime();
-      const localFile = join(homedir(), 'leak', `leak_report_${time}.txt`);
+      const localFile = join(homedir(), 'leak-report', `leak_report_${time}.txt`);
       ensureFileSync(localFile);
       const cmd = `adb pull ${remoteLeakFile} ${localFile}`;
       log.output(cmd);
@@ -56,20 +57,6 @@ class LeakReporter {
       return localFile;
     }
     return null;
-  }
-  private async remoteDevicesFileExist(file: string) {
-    if (ADbDriver.isSystemAdbAvailable()) {
-      const cmd = `adb shell ls ${file}`;
-      const ret: any = await ADbDriver.execADBCommand(cmd);
-      // 如果文件存在，则会输出文件的名称和路径。如果文件不存在，则不会输出任何内容。
-      if (typeof ret === 'string' && ret.indexOf(file) !== -1) {
-        return true;
-      } else if (typeof ret === 'object' && ret.code !== 0) {
-        return false;
-      }
-      return false;
-    }
-    return false;
   }
 
   async parse(file: string): Promise<{ stacks: LeakStack[], address: LeakAddress }> {

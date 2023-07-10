@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { log } from './log';
@@ -8,6 +8,10 @@ import { existsSync, readFileSync } from 'fs';
 import { assets } from './assets';
 import { spawn } from 'child_process';
 import { join } from 'path';
+import * as ADbDriver from "adb-driver";
+import { remoteDevicesFileExist } from './adb';
+import { homedir, type } from 'os';
+import { ensureFileSync, unlinkSync } from 'fs-extra';
 
 export function activate(context: vscode.ExtensionContext) {
   assets.init(context);
@@ -20,6 +24,106 @@ export function activate(context: vscode.ExtensionContext) {
     const num = await vscode.window.showInputBox({ title: '请输入过滤数量', value: "20" })
     if (!num) { return; }
     await setLeakRank(parseInt(num));
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.pull-leak-images', async () => {
+    const apps = getApps();
+    if (!apps.length) {
+      vscode.window.showInformationMessage("请先添加app");
+      return;
+    }
+    // choose app
+    let appName = "";
+    if (apps.length > 1) {
+      const ret = await vscode.window.showQuickPick(apps, { title: "选择app", placeHolder: apps[0] });
+      if (!ret) { return; }
+      appName = ret;
+    } else {
+      appName = apps[0];
+    }
+    // 1. get leak image count
+    let imageCount = 0;
+    {
+      const cmd = `adb shell am broadcast -a ${appName}.leak -e imageCount "vscode"`;
+      const ret: any = await ADbDriver.execADBCommand(cmd);
+      if (typeof ret !== "string") {
+        console.log(ret.message);
+        log.output(ret.message);
+        return;
+      }
+      // Broadcasting: Intent { act=xx.leak flg=0x400000 (has extras) }
+      // Broadcast completed: result=0
+      // Broadcast completed: result=0, data="123"
+      const arr = ret.split("\n");
+      if (arr.length <= 2) {
+        log.output(`无法解析的返回数据:${ret}`);
+        return;
+      }
+      const matchResult = arr[1].match(/^Broadcast completed: result=0, data=(.*)/);
+      if (!matchResult) {
+        return;
+      }
+      let str = matchResult[1].trim();
+      if (str.startsWith("\"")) {
+        str = str.substring(1, str.length);
+      }
+      if (str.endsWith("\"")) {
+        str = str.substring(0, str.length - 1);
+      }
+      imageCount = parseInt(str) || 0;
+      log.output(`find ${imageCount} leak files`);
+    }
+
+    // 2. notify app save leak image to devices location
+    if (imageCount <= 0) {
+      return;
+    }
+    {
+      const cmd = `adb shell am broadcast -a ${appName}.leak -e imageSave "vscode"`;
+      const ret: any = await ADbDriver.execADBCommand(cmd);
+      if (typeof ret !== "string") {
+        console.log(ret.message);
+        log.output(ret.message);
+        return;
+      }
+    }
+    // 3. pull leak image files to computer location
+    const localDir = join(homedir(), `leak-images`, `${new Date().getTime()}-${imageCount}`);
+    {
+      for (let i = 1; i <= imageCount; i++) {
+        // cocos2dx image.saveFile("/data/user/0/pkg/files/x.png")
+        const remoteFile = `/data/user/0/${appName}/files/${i}.png`;
+        const exist = await remoteDevicesFileExist(remoteFile);
+        if (exist) {
+          const localFile = join(localDir, `${i}.png`);
+          ensureFileSync(localFile);
+          {
+            const cmd = `adb exec-out run-as ${appName} cat files/${i}.png > ${localFile}`;
+            const ret: any = await ADbDriver.execADBCommand(cmd);
+            if (typeof ret === "string" && ret.length === 0) {
+              log.output(`Success:${localFile}`);
+            }
+            else if (typeof ret === "string" && ret.length > 0) {
+              log.output(`Failed:${ret}`);
+              unlinkSync(localFile);
+              break;
+            } else if (ret.message) {
+              log.output(`Failed:${ret.message})`);
+              unlinkSync(localFile);
+              break;
+            }
+          }
+          // 需要root权限
+          if (false) {
+            const cmd = `adb pull ${remoteFile} ${localFile}`;
+            const ret: any = await ADbDriver.execADBCommand(cmd);
+            if (typeof ret !== 'string') {
+              // failed
+            }
+          }
+        }
+      }
+    }
+    vscode.window.showInformationMessage(`pull ${imageCount} leak images successfully:${localDir}`);
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.modifyIP', async (treeItem: MyTreeItem) => {
     if (treeItem) {
