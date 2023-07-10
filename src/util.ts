@@ -20,7 +20,8 @@ export enum ERROR {
 }
 
 export function parseSourcemap(sourcemap: string): { file: string, line: number } | null {
-  const matches = sourcemap.match(/(.*):(\d+)$/);
+  // 有时会出现(discriminator 5)，所以不能以行号结尾
+  const matches = sourcemap.match(/(.*):(\d+)/);
   if (matches?.length === 3) {
     const file = normalize(matches[1]);
     const line = parseInt(matches[2]);
