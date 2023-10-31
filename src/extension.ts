@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { Log, log } from './log';
@@ -7,7 +7,7 @@ import { leakReporter } from './leak-reporter';
 import { existsSync, readFileSync } from 'fs';
 import { Assets, assets } from './assets';
 import { spawn } from 'child_process';
-import { dirname, join } from 'path';
+import { basename, dirname, extname, join } from 'path';
 import * as ADbDriver from "adb-driver";
 import { remoteDevicesFileExist } from './adb';
 import { homedir, type } from 'os';
@@ -41,6 +41,77 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.removeSoFile', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    const b = await removeSoFile(soFile);
+    if (b) {
+      toolsDataProvider.refresh();
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.showSoFile', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(soFile));
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.nm', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    const nm = assets.getNM();
+    if (!nm || !existsSync(nm)) {
+      log.output(`no nm file: ${nm}`);
+      return false;
+    }
+    const cwd = dirname(soFile);
+    const ext = extname(soFile);
+    const baseName = basename(soFile);
+    const name = baseName.substring(0, baseName.length - ext.length);
+    const symbol = join(cwd, `${name}.txt`);
+    // -A, --print-file-name  Print name of the input file before every symbol
+    // -C, --demangle[=STYLE] Decode mangled/processed symbol names STYLE can be "none", "auto", "gnu-v3", "java","gnat", "dlang", "rust"
+    // -l, --line-numbers     Use debugging information to find a filename and
+    // const cmd = `${nm} -C -A -l ${soFile} > ${symbol}`;
+    const cmd = `${nm} -C -A -l ${soFile}`;
+    log.output(`cmd: ${cmd}`);
+
+    const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8', cwd });
+    if (stderr) {
+      log.output(stderr);
+      if (stderr.indexOf('no symbols') !== -1) {
+        log.output('so文件没有任何符号表, 不是debug版本的so');
+      }
+    }
+    if (stdout) {
+      log.output("发现符号表");
+      vscode.workspace.openTextDocument({ content: stdout }).then(doc => {
+        vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+      });
+    }
+  }));
+  let preAddress = '';
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.soAddress2line', async (treeItem: ToolItem) => {
     if (!treeItem) {
       return;
@@ -54,7 +125,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     // input address
-    let addr = await vscode.window.showInputBox({ title: "请输入地址" });
+    let addr = await vscode.window.showInputBox({ title: "请输入地址", value: preAddress });
     if (!addr) {
       // log.output('please input address');
       return;
@@ -67,7 +138,7 @@ export function activate(context: vscode.ExtensionContext) {
       addr = addr.substring(1, addr.length);
     }
     addr = head + addr;
-
+    preAddress = addr;
     const addr2lineFile = assets.getAddr2lineExecutable();
     if (!addr2lineFile || !existsSync(addr2lineFile)) {
       log.output(`No addr2line file: ${addr2lineFile}`);

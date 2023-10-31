@@ -33,7 +33,17 @@ export async function addSoFile(file: string) {
   }
   await config.update(KEY_SO_FILES, ret, cfgScope);
 }
-
+export async function removeSoFile(file: string): Promise<boolean> {
+  const config = vscode.workspace.getConfiguration(id);
+  let ret: string[] = config.get<string[]>(KEY_SO_FILES, []);
+  const idx = ret.findIndex(el => el === file);
+  if (idx !== -1) {
+    ret.splice(idx, 1);
+    await config.update(KEY_SO_FILES, ret, cfgScope);
+    return true;
+  }
+  return false;
+}
 export function getExecutableFile(): string {
   const config = vscode.workspace.getConfiguration(id);
   return config.get(KEY_EXECUTABLE_FILE, "");

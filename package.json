@@ -54,6 +54,7 @@
       }
     },
     "commands": [
+  
       {
         "command": "addr2line-assistant.pull-leak-images",
         "title": "pull leak images"
@@ -142,6 +143,18 @@
         "icon": "$(add)"
       },
       {
+        "command": "addr2line-assistant.removeSoFile",
+        "title": "remove so file"
+      },
+      {
+        "command": "addr2line-assistant.showSoFile",
+        "title": "show so file"
+      },
+      {
+        "command": "addr2line-assistant.nm",
+        "title": "nm"
+      },
+      {
         "command": "addr2line-assistant.soAddress2line",
         "title": "so address to line"
       }
@@ -172,6 +185,18 @@
         {
           "command": "addr2line-assistant.removeLeakFile",
           "when": "view==addr2line:main && viewItem==leak-file"
+        },
+        {
+          "command": "addr2line-assistant.nm",
+          "when": "view==addr2line:tools"
+        },
+        {
+          "command": "addr2line-assistant.removeSoFile",
+          "when": "view==addr2line:tools"
+        },
+        {
+          "command": "addr2line-assistant.showSoFile",
+          "when": "view==addr2line:tools"
         },
         {
           "command": "addr2line-assistant.soAddress2line",

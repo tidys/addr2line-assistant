@@ -6,12 +6,11 @@ export class Assets {
   init(context: vscode.ExtensionContext) {
     this.context = context;
   }
-
-  getAddr2lineExecutable() {
+  private _filePath(file: string) {
     let exePath = null;
     const platform = process.platform;
     if (platform === 'win32') {
-      exePath = join(this.context!.extensionPath, "static", platform, "addr2line.exe");
+      exePath = join(this.context!.extensionPath, "static", platform, file);
     }
     if (exePath && existsSync(exePath)) {
       return exePath;
@@ -19,5 +18,15 @@ export class Assets {
       return null;
     }
   }
+  getAddr2lineExecutable() {
+    return this._filePath("addr2line.exe");
+  }
+  getNM() {
+    return this._filePath("nm.exe");
+  }
+  getObjDump() {
+    return this._filePath("objdump.exe");
+  }
+
 }
 export const assets = new Assets();
