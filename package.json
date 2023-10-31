@@ -10,7 +10,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartup"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -157,6 +159,18 @@
       {
         "command": "addr2line-assistant.soAddress2line",
         "title": "so address to line"
+      },
+      {
+        "command": "addr2line-assistant.debugSession",
+        "title": "so debug session"
+      },
+      {
+        "command": "addr2line-assistant.objDump",
+        "title": "so obj dump"
+      },
+      {
+        "command": "addr2line-assistant.killCurrentProcess",
+        "title": "kill current process"
       }
     ],
     "viewsContainers": {
@@ -188,6 +202,14 @@
         },
         {
           "command": "addr2line-assistant.nm",
+          "when": "view==addr2line:tools"
+        },
+        {
+          "command": "addr2line-assistant.debugSession",
+          "when": "view==addr2line:tools"
+        },
+        {
+          "command": "addr2line-assistant.objDump",
           "when": "view==addr2line:tools"
         },
         {

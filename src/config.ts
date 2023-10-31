@@ -25,13 +25,22 @@ export function getSoFiles(): string[] {
   return config.get(KEY_SO_FILES, []);
 }
 
-export async function addSoFile(file: string) {
+export async function addSoFile(file: string[]) {
   const config = vscode.workspace.getConfiguration(id);
   let ret: string[] = config.get<string[]>(KEY_SO_FILES, []);
-  if (!ret.find(el => el === file)) {
-    ret.push(file);
+  let change = false;
+  file.forEach(filePath => {
+    if (!ret.find(el => el === filePath)) {
+      ret.push(filePath);
+      change = true;
+    }
+
+  });
+  if (change) {
+    await config.update(KEY_SO_FILES, ret, cfgScope);
+    return true;
   }
-  await config.update(KEY_SO_FILES, ret, cfgScope);
+  return false;
 }
 export async function removeSoFile(file: string): Promise<boolean> {
   const config = vscode.workspace.getConfiguration(id);

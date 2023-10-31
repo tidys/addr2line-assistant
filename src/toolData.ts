@@ -3,11 +3,13 @@ import { TreeItem } from "vscode";
 import { getSoFiles } from "./config";
 import { basename } from "path";
 import { existsSync } from "fs";
+import { statSync } from 'fs'
 export class ToolItem extends vscode.TreeItem {
   constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
     super(label, state);
     if (existsSync(label)) {
-      this.tooltip = basename(label);
+      const info = statSync(label);
+      this.tooltip = `${basename(label)} ${(info.size / 1024 / 1024).toFixed(1)}M`;
     } else {
       this.tooltip = '';
     }

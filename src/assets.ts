@@ -27,6 +27,8 @@ export class Assets {
   getObjDump() {
     return this._filePath("objdump.exe");
   }
-
+  getReadElf() {
+    return this._filePath("readelf.exe");
+  }
 }
 export const assets = new Assets();

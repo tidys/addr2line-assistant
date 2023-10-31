@@ -6,18 +6,31 @@ import { Log, log } from './log';
 import { leakReporter } from './leak-reporter';
 import { existsSync, readFileSync } from 'fs';
 import { Assets, assets } from './assets';
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { basename, dirname, extname, join } from 'path';
 import * as ADbDriver from "adb-driver";
 import { remoteDevicesFileExist } from './adb';
 import { homedir, type } from 'os';
-import { ensureFileSync, unlinkSync } from 'fs-extra';
+import { ensureFileSync, unlinkSync, removeSync, } from 'fs-extra';
 import { ToolDataProvider, ToolItem } from './toolData';
-import { commandSync } from 'execa';
+import { commandSync, command, ExecaChildProcess } from 'execa';
+import * as os from 'os';
 
 export function activate(context: vscode.ExtensionContext) {
   assets.init(context);
   log.initLog();
+
+  let execaProcess: ExecaChildProcess | null = null;
+  function killCurrentProcess() {
+    if (execaProcess) {
+      execaProcess.kill();
+      execaProcess = null;
+    }
+  }
+  function setProcess(process: ExecaChildProcess) {
+    killCurrentProcess();
+    execaProcess = process;
+  }
 
   const treeDataProvider = new MyTreeViewDataProvider();
   vscode.window.registerTreeDataProvider("addr2line:main", treeDataProvider);
@@ -25,22 +38,27 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider("addr2line:tools", toolsDataProvider);
   let preSoDir: vscode.Uri | undefined = undefined;
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addSoFile', async () => {
-    vscode.window.showInformationMessage("111");
     const uri = await vscode.window.showOpenDialog({
       title: "请选择带有调试符号的可执行文件",
       canSelectFiles: true,
       canSelectFolders: false,
       defaultUri: preSoDir,
-      canSelectMany: false,
+      canSelectMany: true,
       filters: {
-        "so": ['so']
+        "可执行文件": ['so', 'a']
       }
     });
     if (uri && uri.length) {
-      const file = uri[0].fsPath;
-      await addSoFile(file);
-      toolsDataProvider.refresh();
-      preSoDir = vscode.Uri.file(file);
+      let files: string[] = [];
+      for (let i = 0; i < uri.length; i++) {
+        const file = uri[i].fsPath;
+        preSoDir = vscode.Uri.file(file);
+        files.push(file);
+      }
+
+      if (await addSoFile(files)) {
+        toolsDataProvider.refresh();
+      }
     }
 
   }));
@@ -71,6 +89,114 @@ export function activate(context: vscode.ExtensionContext) {
     }
     vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(soFile));
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.debugSession', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    const readElf = assets.getReadElf();
+    const cmd = `${readElf} -S ${soFile}`;
+    log.output(`cmd: ${cmd}`);
+
+    const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8', cwd: dirname(soFile) });
+    if (stderr) {
+      log.output(stderr);
+    }
+    if (stdout) {
+      log.output(stdout);
+      const ret = ['.debug_info', '.debug_ranges', '.debug_str', '.debug_line', '.debug_loc'].find(el => {
+        return stdout.indexOf(el) !== -1;
+      });
+      if (ret) {
+        log.output("发现so的debug信息");
+      } else {
+        log.output("未发现so的debug信息, 这个可能是个release so");
+      }
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.killCurrentProcess', async (treeItem: ToolItem) => {
+    killCurrentProcess();
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.objDump', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    const objdump = assets.getObjDump();
+    if (!objdump || !existsSync(objdump)) {
+      log.output(`no nm file: ${objdump}`);
+      return false;
+    }
+    const cmd = `${objdump} -d ${soFile} `;
+    log.output(`cmd: ${cmd}`);
+    const bName = basename(soFile);
+    const ext = extname(soFile);
+    const fileName = bName.substring(0, bName.length - ext.length);
+    const resultFile = join(os.homedir(), "objdump", `${fileName}.txt`);
+    if (existsSync(resultFile)) {
+      const btnOK: string = "确定";
+      const result = await vscode.window.showInformationMessage("发现已经有该文件，是否重新生成？", {}, btnOK, "取消");
+      if (result !== btnOK) {
+        return;
+      }
+    }
+    removeSync(resultFile);
+    ensureFileSync(resultFile);
+    log.output(`objdump result save in: ${resultFile}`);
+    const uri = vscode.Uri.file(resultFile);
+    // 先创建打开一个文本
+    vscode.workspace.openTextDocument(uri).then(doc => {
+      vscode.window.showTextDocument(doc, vscode.ViewColumn.One).then(editor => {
+
+        function insertLine(str: string) {
+          // const ins = new vscode.SnippetString();
+          // ins.appendText(str);
+          // ins.appendText(`\n`);
+          // editor.insertSnippet(ins, doc.lineAt(0).range.start);
+
+          editor.edit((editBuilder) => {
+            const newPos = new vscode.Position(editor.document.lineCount + 1, 0);
+            editBuilder.insert(newPos, str + os.EOL);
+            var endPos = new vscode.Position(newPos.line + 1, 0);
+            if (true) {
+              // scroll to end
+              var range = new vscode.Range(newPos, endPos);
+              editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+            }
+          });
+        }
+        insertLine(`${cmd} result`);
+
+        const process = command(cmd, { encoding: 'utf-8', cwd: dirname(soFile) });
+        process.stdout?.on('data', (str: Buffer) => {
+          insertLine(str.toString());
+        });
+        process.stderr?.on('data', (str: string) => {
+          log.output(str);
+        });
+        process.on('close', () => {
+          insertLine("---end---");
+          log.output('close');
+          vscode.window.showInformationMessage("objdump finished");
+        });
+        setProcess(process);
+      });
+    });
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.nm', async (treeItem: ToolItem) => {
     if (!treeItem) {
       return;
@@ -97,9 +223,10 @@ export function activate(context: vscode.ExtensionContext) {
     // -C, --demangle[=STYLE] Decode mangled/processed symbol names STYLE can be "none", "auto", "gnu-v3", "java","gnat", "dlang", "rust"
     // -l, --line-numbers     Use debugging information to find a filename and
     // const cmd = `${nm} -C -A -l ${soFile} > ${symbol}`;
-    const cmd = `${nm} -C -A -l ${soFile}`;
+    const cmd = `${nm} -C -A -l ${soFile} `;
     log.output(`cmd: ${cmd}`);
 
+    // TODO: 使用异步，因为有时符号表文件会非常的大
     const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8', cwd });
     if (stderr) {
       log.output(stderr);
