@@ -1,9 +1,16 @@
 import * as vscode from "vscode";
 import { TreeItem } from "vscode";
 import { getSoFiles } from "./config";
+import { basename } from "path";
+import { existsSync } from "fs";
 export class ToolItem extends vscode.TreeItem {
-  constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Collapsed) {
+  constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
     super(label, state);
+    if (existsSync(label)) {
+      this.tooltip = basename(label);
+    } else {
+      this.tooltip = '';
+    }
   }
 }
 export class ToolDataProvider implements vscode.TreeDataProvider<TreeItem> {

@@ -23,12 +23,14 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider("addr2line:main", treeDataProvider);
   const toolsDataProvider = new ToolDataProvider();
   vscode.window.registerTreeDataProvider("addr2line:tools", toolsDataProvider);
+  let preSoDir: vscode.Uri | undefined = undefined;
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addSoFile', async () => {
     vscode.window.showInformationMessage("111");
     const uri = await vscode.window.showOpenDialog({
       title: "请选择带有调试符号的可执行文件",
       canSelectFiles: true,
       canSelectFolders: false,
+      defaultUri: preSoDir,
       canSelectMany: false,
       filters: {
         "so": ['so']
@@ -38,6 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
       const file = uri[0].fsPath;
       await addSoFile(file);
       toolsDataProvider.refresh();
+      preSoDir = vscode.Uri.file(file);
     }
 
   }));
