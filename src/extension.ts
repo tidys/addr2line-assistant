@@ -1,17 +1,19 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
-import { log } from './log';
+import { Log, log } from './log';
 import { leakReporter } from './leak-reporter';
 import { existsSync, readFileSync } from 'fs';
-import { assets } from './assets';
+import { Assets, assets } from './assets';
 import { spawn } from 'child_process';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import * as ADbDriver from "adb-driver";
 import { remoteDevicesFileExist } from './adb';
 import { homedir, type } from 'os';
 import { ensureFileSync, unlinkSync } from 'fs-extra';
+import { ToolDataProvider, ToolItem } from './toolData';
+import { commandSync } from 'execa';
 
 export function activate(context: vscode.ExtensionContext) {
   assets.init(context);
@@ -19,6 +21,79 @@ export function activate(context: vscode.ExtensionContext) {
 
   const treeDataProvider = new MyTreeViewDataProvider();
   vscode.window.registerTreeDataProvider("addr2line:main", treeDataProvider);
+  const toolsDataProvider = new ToolDataProvider();
+  vscode.window.registerTreeDataProvider("addr2line:tools", toolsDataProvider);
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addSoFile', async () => {
+    vscode.window.showInformationMessage("111");
+    const uri = await vscode.window.showOpenDialog({
+      title: "请选择带有调试符号的可执行文件",
+      canSelectFiles: true,
+      canSelectFolders: false,
+      canSelectMany: false,
+      filters: {
+        "so": ['so']
+      }
+    });
+    if (uri && uri.length) {
+      const file = uri[0].fsPath;
+      await addSoFile(file);
+      toolsDataProvider.refresh();
+    }
+
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.soAddress2line', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    // input address
+    let addr = await vscode.window.showInputBox({ title: "请输入地址" });
+    if (!addr) {
+      // log.output('please input address');
+      return;
+    }
+    const head = "0x";
+    if (addr.toLocaleLowerCase().startsWith(head)) {
+      addr = addr.substring(2, addr.length);
+    }
+    while (addr.startsWith("0")) {
+      addr = addr.substring(1, addr.length);
+    }
+    addr = head + addr;
+
+    const addr2lineFile = assets.getAddr2lineExecutable();
+    if (!addr2lineFile || !existsSync(addr2lineFile)) {
+      log.output(`No addr2line file: ${addr2lineFile}`);
+      return false;
+    }
+    // -f 函数名
+    const cmd = `${addr2lineFile} -C -f -e ${soFile} ${addr}`;
+    log.output(`cmd: ${cmd}`);
+    const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8', cwd: dirname(addr2lineFile) });
+    if (stderr) {
+      log.output(stderr);
+    }
+    if (stdout) {
+      let info = "";
+      const result = parseSourcemap(stdout);
+      if (result) {
+        const { file, line } = result;
+        const ret = `${file}:${line}`;
+        info = ret;
+      } else {
+        info = stdout;
+      }
+      log.output(`addr:${addr}`);
+      log.output(`info:${info}`);
+    }
+  }));
 
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.set-leak-rank', async () => {
     const num = await vscode.window.showInputBox({ title: '请输入过滤数量', value: "20" })

@@ -45,6 +45,11 @@
           "type": "number",
           "default": 20,
           "description": "过滤内存泄露的结果，只展示排行前几名"
+        },
+        "a2la.soFiles": {
+          "type": "array",
+          "default": [],
+          "description": "so 文件"
         }
       }
     },
@@ -130,6 +135,15 @@
         "command": "addr2line-assistant.pullLeakFile",
         "title": "pull leak file",
         "icon": "$(cloud-download)"
+      },
+      {
+        "command": "addr2line-assistant.addSoFile",
+        "title": "add so files",
+        "icon": "$(add)"
+      },
+      {
+        "command": "addr2line-assistant.soAddress2line",
+        "title": "so address to line"
       }
     ],
     "viewsContainers": {
@@ -147,12 +161,21 @@
           "command": "addr2line-assistant.addIP",
           "when": "view == addr2line:main",
           "group": "navigation"
+        },
+        {
+          "command": "addr2line-assistant.addSoFile",
+          "when": "view==addr2line:tools",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "addr2line-assistant.removeLeakFile",
           "when": "view==addr2line:main && viewItem==leak-file"
+        },
+        {
+          "command": "addr2line-assistant.soAddress2line",
+          "when": "view==addr2line:tools"
         },
         {
           "command": "addr2line-assistant.refresh",
@@ -200,8 +223,8 @@
           "name": "leak with app"
         },
         {
-          "id": "addr2line:main2",
-          "name": "leak with file"
+          "id": "addr2line:tools",
+          "name": "addr2line tools"
         }
       ]
     }

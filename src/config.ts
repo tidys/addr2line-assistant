@@ -6,6 +6,7 @@ const KEY_APPS = 'apps';
 const KEY_LEAK_FILE = "leak-file";
 const KEY_LOCAL_FILES = "local-files";
 const KEY_EXECUTABLE_FILE = "executable-file";
+const KEY_SO_FILES = "soFiles";
 const KEY_LEAK_RANK = "leak-rank";
 export function getKey(ip: string, app: string) {
   return `${ip}-${app}`;
@@ -18,6 +19,19 @@ export async function setLeakRank(rank: number) {
 export function getLeakRank() {
   const config = vscode.workspace.getConfiguration(id);
   return config.get(KEY_LEAK_RANK, 20);
+}
+export function getSoFiles(): string[] {
+  const config = vscode.workspace.getConfiguration(id);
+  return config.get(KEY_SO_FILES, []);
+}
+
+export async function addSoFile(file: string) {
+  const config = vscode.workspace.getConfiguration(id);
+  let ret: string[] = config.get<string[]>(KEY_SO_FILES, []);
+  if (!ret.find(el => el === file)) {
+    ret.push(file);
+  }
+  await config.update(KEY_SO_FILES, ret, cfgScope);
 }
 
 export function getExecutableFile(): string {
