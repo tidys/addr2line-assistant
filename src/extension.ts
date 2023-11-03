@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile } from './config';
-import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap } from './util';
+import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap, saveCommandResultToFile } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { Log, log } from './log';
 import { leakReporter } from './leak-reporter';
@@ -25,7 +25,9 @@ export function activate(context: vscode.ExtensionContext) {
     if (execaProcess) {
       execaProcess.kill();
       execaProcess = null;
+      return true;
     }
+    return false;
   }
   function setProcess(process: ExecaChildProcess) {
     killCurrentProcess();
@@ -122,8 +124,16 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.killCurrentProcess', async (treeItem: ToolItem) => {
-    killCurrentProcess();
+    if (killCurrentProcess()) {
+      vscode.window.showInformationMessage("kill process successfully");
+    } else {
+      vscode.window.showInformationMessage("no process needs to be killed");
+    }
   }));
+  const dirs: Record<string, string> = {
+    nm: 'nm',
+    objdump: 'objdump',
+  };
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.objDump', async (treeItem: ToolItem) => {
     if (!treeItem) {
       return;
@@ -138,65 +148,24 @@ export function activate(context: vscode.ExtensionContext) {
     }
     const objdump = assets.getObjDump();
     if (!objdump || !existsSync(objdump)) {
-      log.output(`no nm file: ${objdump}`);
+      log.output(`no objdump file: ${objdump}`);
       return false;
     }
     const cmd = `${objdump} -d ${soFile} `;
-    log.output(`cmd: ${cmd}`);
-    const bName = basename(soFile);
-    const ext = extname(soFile);
-    const fileName = bName.substring(0, bName.length - ext.length);
-    const resultFile = join(os.homedir(), "objdump", `${fileName}.txt`);
-    if (existsSync(resultFile)) {
-      const btnOK: string = "确定";
-      const result = await vscode.window.showInformationMessage("发现已经有该文件，是否重新生成？", {}, btnOK, "取消");
-      if (result !== btnOK) {
-        return;
-      }
-    }
-    removeSync(resultFile);
-    ensureFileSync(resultFile);
-    log.output(`objdump result save in: ${resultFile}`);
-    const uri = vscode.Uri.file(resultFile);
-    // 先创建打开一个文本
-    vscode.workspace.openTextDocument(uri).then(doc => {
-      vscode.window.showTextDocument(doc, vscode.ViewColumn.One).then(editor => {
-
-        function insertLine(str: string) {
-          // const ins = new vscode.SnippetString();
-          // ins.appendText(str);
-          // ins.appendText(`\n`);
-          // editor.insertSnippet(ins, doc.lineAt(0).range.start);
-
-          editor.edit((editBuilder) => {
-            const newPos = new vscode.Position(editor.document.lineCount + 1, 0);
-            editBuilder.insert(newPos, str + os.EOL);
-            var endPos = new vscode.Position(newPos.line + 1, 0);
-            if (true) {
-              // scroll to end
-              var range = new vscode.Range(newPos, endPos);
-              editor.revealRange(range, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
-            }
-          });
-        }
-        insertLine(`${cmd} result`);
-
-        const process = command(cmd, { encoding: 'utf-8', cwd: dirname(soFile) });
-        process.stdout?.on('data', (str: Buffer) => {
-          insertLine(str.toString());
-        });
-        process.stderr?.on('data', (str: string) => {
-          log.output(str);
-        });
-        process.on('close', () => {
-          insertLine("---end---");
-          log.output('close');
-          vscode.window.showInformationMessage("objdump finished");
-        });
+    saveCommandResultToFile({
+      cmd, soFile, dir: dirs.objdump, callback(process) {
         setProcess(process);
-      });
+      }
     });
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.resultDirectory', async (treeItem: ToolItem) => {
+    for (const key in dirs) {
+      const dir = dirs[key];
+      const resultFile = join(os.homedir(), dir);
+      log.output(`result directory ${resultFile}`);
+    }
+  }));
+
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.nm', async (treeItem: ToolItem) => {
     if (!treeItem) {
       return;
@@ -224,22 +193,15 @@ export function activate(context: vscode.ExtensionContext) {
     // -l, --line-numbers     Use debugging information to find a filename and
     // const cmd = `${nm} -C -A -l ${soFile} > ${symbol}`;
     const cmd = `${nm} -C -A -l ${soFile} `;
-    log.output(`cmd: ${cmd}`);
 
-    // TODO: 使用异步，因为有时符号表文件会非常的大
-    const { stdout, stderr } = commandSync(cmd, { encoding: 'utf-8', cwd });
-    if (stderr) {
-      log.output(stderr);
-      if (stderr.indexOf('no symbols') !== -1) {
-        log.output('so文件没有任何符号表, 不是debug版本的so');
+    saveCommandResultToFile({
+      cmd, soFile, dir: dirs.nm, callback(process) {
+        setProcess(process);
       }
-    }
-    if (stdout) {
-      log.output("发现符号表");
-      vscode.workspace.openTextDocument({ content: stdout }).then(doc => {
-        vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
-      });
-    }
+    });
+    // if (stderr.indexOf('no symbols') !== -1) {
+    //   log.output('so文件没有任何符号表, 不是debug版本的so');
+    // }
   }));
   let preAddress = '';
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.soAddress2line', async (treeItem: ToolItem) => {

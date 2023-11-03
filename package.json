@@ -3,7 +3,7 @@
   "displayName": "addr2line-assistant",
   "description": "",
   "icon": "address.png",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "engines": {
     "vscode": "^1.79.0"
   },
@@ -171,6 +171,11 @@
       {
         "command": "addr2line-assistant.killCurrentProcess",
         "title": "kill current process"
+      },
+      {
+        "command": "addr2line-assistant.resultDirectory",
+        "icon": "$(file-directory)",
+        "title": "resultDirectory"
       }
     ],
     "viewsContainers": {
@@ -191,6 +196,11 @@
         },
         {
           "command": "addr2line-assistant.addSoFile",
+          "when": "view==addr2line:tools",
+          "group": "navigation"
+        },
+        {
+          "command": "addr2line-assistant.resultDirectory",
           "when": "view==addr2line:tools",
           "group": "navigation"
         }
