@@ -74,10 +74,18 @@ export async function saveCommandResultToFile(opts: {
   const soHash = hash.update(Buffer.from(soBuffer)).digest("hex");
   const resultFile = join(os.homedir(), dir, `${fileName}-${soHash}.txt`);
   if (existsSync(resultFile)) {
-    const btnOK: string = "确定";
-    const result = await vscode.window.showInformationMessage(`发现已经有${basename(resultFile)}，是否重新生成？`, {}, btnOK, "取消");
-    if (result !== btnOK) {
+    const btnReGen: string = "重新生成";
+    const btnOpen: string = "打开";
+    const btnCancel: string = "取消";
+    const result = await vscode.window.showInformationMessage(`发现已经有${basename(resultFile)}，是否重新生成？`, {}, btnOpen, btnReGen, btnCancel);
+    if (result === btnReGen) {
+    } else if (result === btnOpen) {
+      vscode.workspace.openTextDocument(resultFile).then(doc => {
+        vscode.window.showTextDocument(doc, {});
+      });
       return;
+    } else if (result === btnCancel) {
+      return;      
     }
   }
   ensureFileSync(resultFile);
