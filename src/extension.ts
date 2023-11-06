@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile } from './config';
-import { ERROR, checkAppValid, checkIsIpValid, parseSourcemap, saveCommandResultToFile } from './util';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile, addSoSourceDirectory } from './config';
+import { ERROR, checkAppValid, checkIsIpValid, openEngineSourceFile, parseSourcemap, saveCommandResultToFile } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { Log, log } from './log';
 import { leakReporter } from './leak-reporter';
@@ -165,7 +165,18 @@ export function activate(context: vscode.ExtensionContext) {
       log.output(`result directory ${resultFile}`);
     }
   }));
-
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addSoSourceDirectory', async (treeItem: ToolItem) => {
+    const uri = await vscode.window.showOpenDialog({
+      title: "so源文件目录",
+      canSelectFiles: false,
+      canSelectFolders: true,
+      canSelectMany: false,
+    });
+    if (uri && uri.length) {
+      const file = uri[0].fsPath;
+      await addSoSourceDirectory([file]);
+    }
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.nm', async (treeItem: ToolItem) => {
     if (!treeItem) {
       return;
@@ -250,11 +261,13 @@ export function activate(context: vscode.ExtensionContext) {
         const { file, line } = result;
         const ret = `${file}:${line}`;
         info = ret;
+        openEngineSourceFile(file, line);
       } else {
         info = stdout;
       }
-      log.output(`addr:${addr}`);
-      log.output(`info:${info}`);
+      log.output(`addr: ${addr}`);
+      log.output(`info: ${info}`);
+      log.output("");
     }
   }));
 

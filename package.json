@@ -52,11 +52,19 @@
           "type": "array",
           "default": [],
           "description": "so 文件"
+        },
+        "a2la.soSourceDirectories": {
+          "type": "array",
+          "default": [],
+          "description": "so源文件目录，使用addr2line时会自动查找并打开"
         }
       }
     },
     "commands": [
-  
+      {
+        "command": "addr2line-assistant.addSoSourceDirectory",
+        "title": "add so source directory"
+      },
       {
         "command": "addr2line-assistant.pull-leak-images",
         "title": "pull leak images"
@@ -318,6 +326,7 @@
     "adb-driver": "^0.1.8",
     "addr2line": "^0.0.4",
     "execa": "5.1.1",
+    "vscode-languageclient": "8.1.0",
     "fs-extra": "^11.1.1"
   }
 }

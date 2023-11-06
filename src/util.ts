@@ -7,6 +7,7 @@ import { ensureFileSync, removeSync } from "fs-extra";
 import { ExecaChildProcess, ExecaChildPromise, command } from "execa";
 import { ChildProcess } from "child_process";
 import { createHash } from "crypto";
+import { getSoSourceDirectories } from "./config";
 
 export function checkLeakFileValid(file: string): { err: number, msg: string } {
   const ret = { err: 0, msg: '' };
@@ -31,7 +32,7 @@ export function parseSourcemap(sourcemap: string): { file: string, line: number 
   // 有时会出现(discriminator 5)，所以不能以行号结尾
   const matches = sourcemap.match(/(.*):(\d+)/);
   if (matches?.length === 3) {
-    const file = normalize(matches[1]);
+    const file = normalize(matches[1]);//.replace(/\\/g, '/');
     const line = parseInt(matches[2]);
     return { file, line };
   }
@@ -125,4 +126,32 @@ export async function saveCommandResultToFile(opts: {
     });
   });
 
+}
+
+/**
+ * 
+ * @param file 来自addr2line，需要将地址转换下在进行打开
+ */
+export function openEngineSourceFile(file: string, line: number) {
+  const dirs = getSoSourceDirectories();
+
+  for (let i = 0; i < dirs.length; i++) {
+    const dir = dirs[i];
+    const fileArray = file.split('\\');
+    if (!fileArray.length) {
+      return;
+    }
+
+    while (fileArray.length) {
+      fileArray.splice(0, 1);
+      const curPath = fileArray.join('/');
+      const resultPath = join(dir, curPath);
+      if (existsSync(resultPath)) {
+        vscode.workspace.openTextDocument(resultPath).then(doc => {
+          vscode.window.showTextDocument(doc, { selection: new vscode.Range(line - 1, 0, line - 1, 0) });
+        });
+        return;
+      }
+    }
+  }
 }

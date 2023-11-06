@@ -8,10 +8,34 @@ const KEY_LOCAL_FILES = "local-files";
 const KEY_EXECUTABLE_FILE = "executable-file";
 const KEY_SO_FILES = "soFiles";
 const KEY_LEAK_RANK = "leak-rank";
+const KEY_SO_SOURCE_DIRECTORIES = "soSourceDirectories";
 export function getKey(ip: string, app: string) {
   return `${ip}-${app}`;
 }
 const cfgScope: vscode.ConfigurationTarget = vscode.ConfigurationTarget.Global;
+
+export async function addSoSourceDirectory(directories: string[]) {
+  const config = vscode.workspace.getConfiguration(id);
+  let ret: string[] = config.get<string[]>(KEY_SO_SOURCE_DIRECTORIES, []);
+  let change = false;
+  directories.forEach(dir => {
+    if (!ret.find(el => el === dir)) {
+      ret.push(dir);
+      change = true;
+    }
+  });
+  if (change) {
+    await config.update(KEY_SO_SOURCE_DIRECTORIES, ret, cfgScope);
+    return true;
+  }
+  return false;
+}
+
+export function getSoSourceDirectories() {
+  const config = vscode.workspace.getConfiguration(id);
+  let ret: string[] = config.get<string[]>(KEY_SO_SOURCE_DIRECTORIES, []);
+  return ret;
+}
 export async function setLeakRank(rank: number) {
   const config = vscode.workspace.getConfiguration(id);
   return await config.update(KEY_LEAK_RANK, rank, cfgScope);
