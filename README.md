@@ -38,7 +38,7 @@
 - nm : 使用nm查看so文件的符号表等相关信息，如果so文件比较大，这个过程可能比较漫长 
 - remove so file: 将当前so文件从列表中移除，并不会删除该so文件
 - show so file: 在文件夹中显示so文件
-- so address to line: 输入符号地址，通过addr2line转换为源码地址
+- so address to line: 输入符号地址，通过addr2line转换为源码地址，如果配置了so source directories，会自动识别源文件并自动打开跳转到对应的行号。
 - so debug session: 使用`readelf`获取so文件的信息，主要是为了观察so的各个section headers，用来判断so是否包含debug相关信息
 - so objdump: 使用objdump得到so的反汇编，自动将结果保存到本地文件中，如果so文件比较大，这个过程可能比较漫长。
 
