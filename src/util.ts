@@ -80,12 +80,17 @@ export async function saveCommandResultToFile(opts: {
     const result = await vscode.window.showInformationMessage(`发现已经有${basename(resultFile)}，是否重新生成？`, {}, btnOpen, btnReGen, btnCancel);
     if (result === btnReGen) {
     } else if (result === btnOpen) {
-      vscode.workspace.openTextDocument(resultFile).then(doc => {
-        vscode.window.showTextDocument(doc, {});
-      });
+      vscode.workspace.openTextDocument(resultFile).then(
+        (doc) => {
+          vscode.window.showTextDocument(doc, {});
+        },
+        (error) => {
+          const msg = decodeURIComponent(error.message);
+          vscode.window.showErrorMessage(msg);
+        });
       return;
     } else if (result === btnCancel) {
-      return;      
+      return;
     }
   }
   ensureFileSync(resultFile);
