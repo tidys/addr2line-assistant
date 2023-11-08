@@ -3,7 +3,7 @@
   "displayName": "addr2line-assistant",
   "description": "",
   "icon": "address.png",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "engines": {
     "vscode": "^1.79.0"
   },
@@ -326,7 +326,7 @@
     "adb-driver": "^0.1.8",
     "addr2line": "^0.0.4",
     "execa": "5.1.1",
-    "vscode-languageclient": "8.1.0",
-    "fs-extra": "^11.1.1"
+    "fs-extra": "^11.1.1",
+    "vscode-languageclient": "8.1.0"
   }
 }

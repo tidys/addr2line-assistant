@@ -59,7 +59,12 @@ export function checkIsIpValid(str: string): { err: number, msg: string } {
   }
   return ret;
 }
-
+export function getSoHash(soFile: string): string {
+  const hash = createHash('md5');
+  const soBuffer = readFileSync(soFile);
+  const soHash = hash.update(Buffer.from(soBuffer)).digest("hex");
+  return soHash;
+}
 export async function saveCommandResultToFile(opts: {
   cmd: string, soFile: string, dir: string,
   callback: (process: ExecaChildProcess) => void
@@ -69,9 +74,7 @@ export async function saveCommandResultToFile(opts: {
   const bName = basename(soFile);
   const ext = extname(soFile);
   const fileName = bName.substring(0, bName.length - ext.length);
-  const hash = createHash('md5');
-  const soBuffer = readFileSync(soFile);
-  const soHash = hash.update(Buffer.from(soBuffer)).digest("hex");
+  const soHash = getSoHash(soFile);
   const resultFile = join(os.homedir(), dir, `${fileName}-${soHash}.txt`);
   if (existsSync(resultFile)) {
     const btnReGen: string = "重新生成";

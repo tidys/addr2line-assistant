@@ -3,13 +3,18 @@ import { TreeItem } from "vscode";
 import { getSoFiles } from "./config";
 import { basename } from "path";
 import { existsSync } from "fs";
-import { statSync } from 'fs'
+import { statSync } from 'fs';
+import { getSoHash } from "./util";
 export class ToolItem extends vscode.TreeItem {
   constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
     super(label, state);
     if (existsSync(label)) {
       const info = statSync(label);
-      this.tooltip = `${basename(label)} ${(info.size / 1024 / 1024).toFixed(1)}M`;
+      const soHash = getSoHash(label);
+      const file = `file: ${basename(label)}\n`;
+      const size = `size: ${(info.size / 1024 / 1024).toFixed(1)}M\n`;
+      const hash = `hash: ${soHash}`;
+      this.tooltip = file + size + hash;
     } else {
       this.tooltip = '';
     }

@@ -228,17 +228,26 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     // input address
-    let addr = await vscode.window.showInputBox({ title: "请输入地址", value: preAddress });
-    if (!addr) {
+    let originAddr = await vscode.window.showInputBox({ title: "请输入地址", value: preAddress });
+    if (!originAddr) {
       // log.output('please input address');
       return;
     }
+    let addr = "";
+    for (let i = 0; i < originAddr.length; i++) {
+      if (originAddr[i] !== " ") {
+        addr += originAddr[i];
+      }
+    }
+    addr = addr.trim();
     const head = "0x";
     if (addr.toLocaleLowerCase().startsWith(head)) {
       addr = addr.substring(2, addr.length);
+      addr = addr.trim();
     }
     while (addr.startsWith("0")) {
       addr = addr.substring(1, addr.length);
+      addr = addr.trim();
     }
     addr = head + addr;
     preAddress = addr;
