@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile, addSoSourceDirectory } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile, addSoSourceDirectory, setDefaultSoFile, getDefaultSoFile } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, openEngineSourceFile, parseSourcemap, saveCommandResultToFile } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { Log, log } from './log';
@@ -165,6 +165,46 @@ export function activate(context: vscode.ExtensionContext) {
       log.output(`result directory ${resultFile}`);
     }
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.chmod_x_tools', async (treeItem: ToolItem) => {
+    const msg = assets.chmodX();
+    if (msg) {
+      vscode.window.showInformationMessage(msg);
+    }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addr2line-select', async (treeItem: ToolItem) => {
+    const soFile: string = getDefaultSoFile();
+    if (!existsSync(soFile)) {
+      vscode.window.showInformationMessage(`please set default so file`);
+      return;
+    }
+
+    let editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+    let selection = editor.selection;
+    let selectedText = editor.document.getText(selection);
+    if (!selectedText) {
+      vscode.window.showInformationMessage("no select");
+      return;
+    }
+    await doAddr2lineCommand(selectedText, soFile);
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.setDefaultSo', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    await setDefaultSoFile(soFile);
+    toolsDataProvider.refresh();
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addSoSourceDirectory', async (treeItem: ToolItem) => {
     const uri = await vscode.window.showOpenDialog({
       title: "so源文件目录",
@@ -215,20 +255,7 @@ export function activate(context: vscode.ExtensionContext) {
     // }
   }));
   let preAddress = '';
-  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.soAddress2line', async (treeItem: ToolItem) => {
-    if (!treeItem) {
-      return;
-    }
-    const soFile = treeItem.label;
-    if (!soFile || typeof soFile !== 'string') {
-      return;
-    }
-    if (!existsSync(soFile)) {
-      log.output(`${soFile} not exists`);
-      return;
-    }
-    // input address
-    let originAddr = await vscode.window.showInputBox({ title: "请输入地址", value: preAddress });
+  async function doAddr2lineCommand(originAddr: string | undefined, soFile: string) {
     if (!originAddr) {
       // log.output('please input address');
       return;
@@ -278,6 +305,22 @@ export function activate(context: vscode.ExtensionContext) {
       log.output(`info: ${info}`);
       log.output("");
     }
+  }
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.soAddress2line', async (treeItem: ToolItem) => {
+    if (!treeItem) {
+      return;
+    }
+    const soFile = treeItem.label;
+    if (!soFile || typeof soFile !== 'string') {
+      return;
+    }
+    if (!existsSync(soFile)) {
+      log.output(`${soFile} not exists`);
+      return;
+    }
+    // input address
+    let originAddr = await vscode.window.showInputBox({ title: "请输入地址", value: preAddress });
+    await doAddr2lineCommand(originAddr, soFile);
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.set-leak-rank', async () => {

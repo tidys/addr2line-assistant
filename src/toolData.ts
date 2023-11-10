@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { TreeItem } from "vscode";
-import { getSoFiles } from "./config";
+import { getDefaultSoFile, getSoFiles } from "./config";
 import { basename } from "path";
 import { existsSync } from "fs";
 import { statSync } from 'fs';
@@ -8,6 +8,10 @@ import { getSoHash } from "./util";
 export class ToolItem extends vscode.TreeItem {
   constructor(label: string, state: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None) {
     super(label, state);
+    const defaultSoFile = getDefaultSoFile();
+    if (defaultSoFile && defaultSoFile === label) {
+      this.iconPath = new vscode.ThemeIcon("extensions-star-full");
+    }
     if (existsSync(label)) {
       const info = statSync(label);
       const soHash = getSoHash(label);

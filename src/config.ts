@@ -9,6 +9,7 @@ const KEY_EXECUTABLE_FILE = "executable-file";
 const KEY_SO_FILES = "soFiles";
 const KEY_LEAK_RANK = "leak-rank";
 const KEY_SO_SOURCE_DIRECTORIES = "soSourceDirectories";
+const KEY_DEFAULT_SO_FILE = "defaultSoFile";
 export function getKey(ip: string, app: string) {
   return `${ip}-${app}`;
 }
@@ -36,6 +37,17 @@ export function getSoSourceDirectories() {
   let ret: string[] = config.get<string[]>(KEY_SO_SOURCE_DIRECTORIES, []);
   return ret;
 }
+
+export async function setDefaultSoFile(file: string) {
+  const config = vscode.workspace.getConfiguration(id);
+  return await config.update(KEY_DEFAULT_SO_FILE, file, cfgScope);
+}
+
+export function getDefaultSoFile() {
+  const config = vscode.workspace.getConfiguration(id);
+  return config.get(KEY_DEFAULT_SO_FILE, "");
+}
+
 export async function setLeakRank(rank: number) {
   const config = vscode.workspace.getConfiguration(id);
   return await config.update(KEY_LEAK_RANK, rank, cfgScope);
@@ -72,6 +84,10 @@ export async function removeSoFile(file: string): Promise<boolean> {
   const idx = ret.findIndex(el => el === file);
   if (idx !== -1) {
     ret.splice(idx, 1);
+    const defaultSoFile = getDefaultSoFile();
+    if (defaultSoFile && defaultSoFile === file) {
+      await setDefaultSoFile("");
+    }
     await config.update(KEY_SO_FILES, ret, cfgScope);
     return true;
   }

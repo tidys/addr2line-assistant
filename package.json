@@ -3,9 +3,9 @@
   "displayName": "addr2line-assistant",
   "description": "",
   "icon": "address.png",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "engines": {
-    "vscode": "^1.79.0"
+    "vscode": "^1.77.1"
   },
   "categories": [
     "Other"
@@ -53,6 +53,11 @@
           "default": [],
           "description": "so 文件"
         },
+        "a2la.defaultSoFile": {
+          "type": "string",
+          "default": "",
+          "description": "默认使用的so文件"
+        },
         "a2la.soSourceDirectories": {
           "type": "array",
           "default": [],
@@ -60,6 +65,12 @@
         }
       }
     },
+    "keybindings": [
+      {
+        "command": "addr2line-assistant.addr2line-select",
+        "key": "alt+x"
+      }
+    ],
     "commands": [
       {
         "command": "addr2line-assistant.addSoSourceDirectory",
@@ -86,6 +97,10 @@
       {
         "command": "addr2line-assistant.set-executable-file",
         "title": "set executable file"
+      },
+      {
+        "command": "addr2line-assistant.chmod_x_tools",
+        "title": "chmod x"
       },
       {
         "command": "addr2line-assistant.show-executable-file",
@@ -183,7 +198,17 @@
       {
         "command": "addr2line-assistant.resultDirectory",
         "icon": "$(file-directory)",
-        "title": "resultDirectory"
+        "title": "resultDirectory",
+        "shortTitle": ""
+      },
+      {
+        "command": "addr2line-assistant.addr2line-select",
+        "title": "addr2line-select",
+        "icon": "$(extensions-star-full)"
+      },
+      {
+        "command": "addr2line-assistant.setDefaultSo",
+        "title": "set default so"
       }
     ],
     "viewsContainers": {
@@ -196,6 +221,12 @@
       ]
     },
     "menus": {
+      "editor/context": [
+        {
+          "command": "addr2line-assistant.addr2line-select",
+          "group": "addr2line-assistant"
+        }
+      ],
       "view/title": [
         {
           "command": "addr2line-assistant.addIP",
@@ -240,6 +271,10 @@
         },
         {
           "command": "addr2line-assistant.soAddress2line",
+          "when": "view==addr2line:tools"
+        },
+        {
+          "command": "addr2line-assistant.setDefaultSo",
           "when": "view==addr2line:tools"
         },
         {
@@ -312,7 +347,7 @@
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
-    "@types/vscode": "^1.79.0",
+    "@types/vscode": "^1.77.1",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-electron": "^2.2.0",

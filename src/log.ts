@@ -54,6 +54,7 @@ export class Log {
   output(log: string) {
     if (this.logInstance) {
       this.logInstance.appendLine(log);
+      this.logInstance.show();
     }
   }
 }

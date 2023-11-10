@@ -31,8 +31,11 @@
 
 使用步骤：
 1. 通过右上角的`+`按钮，添加so文件，对于`nm`, `objdump`的结果保存目录可以通过文件夹图标看到。
- ![Alt text](doc/addr2line-add.png)  
-3. 右键列表中的so文件进行一些分析
+ 
+  ![Alt text](doc/addr2line-add.png)  
+
+2. 右键列表中的so文件进行一些分析
+   
   ![Alt text](doc/addr2line-so-files.png)
   
 - nm : 使用nm查看so文件的符号表等相关信息，如果so文件比较大，这个过程可能比较漫长 
@@ -45,3 +48,14 @@
 
 
 对于结果的数据量比较大的情况，耗时非常久，如果想结束这个过程，可以使用命令`killCurrentProcess`结束这个过程。
+
+## 小技巧
+先设置默认的so
+
+![Alt text](./doc/default-so.png)
+
+右键点击选择的文本，会出现一个`addr2line-select`选项，该菜单会自动根据选择的内容，进行addr2line，使用的so文件就是上边设置的so文件
+
+![Alt text](./doc/alt-x.png)
+
+通过`alt+x`快捷键调用`addr2line-select`命令，快速调用addr2line，返回结果
