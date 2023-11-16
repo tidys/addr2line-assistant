@@ -148,9 +148,9 @@ export async function saveCommandResultToFile(opts: {
  * 
  * @param file 来自addr2line，需要将地址转换下在进行打开
  */
-export function openEngineSourceFile(file: string, line: number) {
+export function openEngineSourceFile(file: string, line: number, splitFind: boolean = true) {
   const dirs = getSoSourceDirectories();
-
+  file = normalize(file);
   for (let i = 0; i < dirs.length; i++) {
     const dir = dirs[i];
     const fileArray = file.split('\\');
@@ -158,8 +158,7 @@ export function openEngineSourceFile(file: string, line: number) {
       return;
     }
 
-    while (fileArray.length) {
-      fileArray.splice(0, 1);
+    do {
       const curPath = fileArray.join('/');
       const resultPath = join(dir, curPath);
       if (existsSync(resultPath)) {
@@ -168,6 +167,7 @@ export function openEngineSourceFile(file: string, line: number) {
         });
         return;
       }
-    }
+      fileArray.splice(0, 1);
+    } while (fileArray.length && splitFind);
   }
 }

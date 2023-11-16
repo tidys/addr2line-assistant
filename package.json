@@ -3,7 +3,7 @@
   "displayName": "addr2line-assistant",
   "description": "",
   "icon": "address.png",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "engines": {
     "vscode": "^1.77.1"
   },
@@ -69,6 +69,10 @@
       {
         "command": "addr2line-assistant.addr2line-select",
         "key": "alt+x"
+      },
+      {
+        "command": "addr2line-assistant.source-select",
+        "key": "alt+c"
       }
     ],
     "commands": [
@@ -207,6 +211,10 @@
         "icon": "$(extensions-star-full)"
       },
       {
+        "command": "addr2line-assistant.source-select",
+        "title": "source-select"
+      },
+      {
         "command": "addr2line-assistant.setDefaultSo",
         "title": "set default so"
       }
@@ -224,6 +232,10 @@
       "editor/context": [
         {
           "command": "addr2line-assistant.addr2line-select",
+          "group": "addr2line-assistant"
+        },
+        {
+          "command": "addr2line-assistant.source-select",
           "group": "addr2line-assistant"
         }
       ],

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile, addSoSourceDirectory, setDefaultSoFile, getDefaultSoFile } from './config';
+import { addApp, addIP, getLeakFile, getIPS, removeAPP, removeIP, setLeakFile, getKey, addLocalFiles, removeLocalFiles, setExecutableFile, modifyIP, setLeakRank, getExecutableFile, removeLocalFile, getApps, addSoFile, removeSoFile, addSoSourceDirectory, setDefaultSoFile, getDefaultSoFile, getSoSourceDirectories } from './config';
 import { ERROR, checkAppValid, checkIsIpValid, openEngineSourceFile, parseSourcemap, saveCommandResultToFile } from './util';
 import { MyTreeItem, MyTreeViewDataProvider } from './treeview';
 import { Log, log } from './log';
@@ -7,7 +7,7 @@ import { leakReporter } from './leak-reporter';
 import { existsSync, readFileSync } from 'fs';
 import { Assets, assets } from './assets';
 import { exec, spawn } from 'child_process';
-import { basename, dirname, extname, join } from 'path';
+import { basename, dirname, extname, join, normalize } from 'path';
 import * as ADbDriver from "adb-driver";
 import { remoteDevicesFileExist } from './adb';
 import { homedir, type } from 'os';
@@ -171,6 +171,23 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(msg);
     }
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.source-select', async (treeItem: ToolItem) => {
+    let editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+    let selection = editor.selection;
+    let selectedLine = editor.document.lineAt(selection.start.line);
+    let selectedText = selectedLine.text;
+    const result = selectedText.match(/.* at (.*):(\d*)/);
+    if (result?.length === 3) {
+      let source = normalize(result[1]);
+      const line = result[2];
+      openEngineSourceFile(source, parseInt(line), false);
+    } else {
+      vscode.window.showInformationMessage("无法识别的格式");
+    }
+  }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addr2line-select', async (treeItem: ToolItem) => {
     const soFile: string = getDefaultSoFile();
     if (!existsSync(soFile)) {
@@ -297,7 +314,7 @@ export function activate(context: vscode.ExtensionContext) {
         const { file, line } = result;
         const ret = `${file}:${line}`;
         info = ret;
-        openEngineSourceFile(file, line);
+        openEngineSourceFile(normalize(file), line);
       } else {
         info = stdout;
       }

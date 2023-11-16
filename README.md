@@ -49,7 +49,7 @@
 
 对于结果的数据量比较大的情况，耗时非常久，如果想结束这个过程，可以使用命令`killCurrentProcess`结束这个过程。
 
-## 小技巧
+## 文本编辑器中快速addr2line
 先设置默认的so
 
 ![Alt text](./doc/default-so.png)
@@ -59,3 +59,14 @@
 ![Alt text](./doc/alt-x.png)
 
 通过`alt+x`快捷键调用`addr2line-select`命令，快速调用addr2line，返回结果
+
+## 文本编辑器中快速打开源码
+![Alt text](doc/source-select.png)
+
+需要先设置 `so source directory`，添加相关的目录。
+
+当执行该菜单时，会自动获取当前行的内容，然后分析出源码和行号信息，目前支持的格式`(/.* at (.*):(\d*)/)`
+    
+
+
+接着和预设好的目录进行逐一匹配，如果文件存在，就会自动打开文件并跳转到对应行号。
