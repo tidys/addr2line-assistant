@@ -3,7 +3,7 @@
   "displayName": "addr2line-assistant",
   "description": "",
   "icon": "address.png",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "engines": {
     "vscode": "^1.77.1"
   },
@@ -68,11 +68,11 @@
     "keybindings": [
       {
         "command": "addr2line-assistant.addr2line-select",
-        "key": "alt+x"
+        "key": "alt+1"
       },
       {
         "command": "addr2line-assistant.source-select",
-        "key": "alt+c"
+        "key": "alt+2"
       }
     ],
     "commands": [

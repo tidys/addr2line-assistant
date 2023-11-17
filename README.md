@@ -56,17 +56,15 @@
 
 右键点击选择的文本，会出现一个`addr2line-select`选项，该菜单会自动根据选择的内容，进行addr2line，使用的so文件就是上边设置的so文件
 
-![Alt text](./doc/alt-x.png)
+![Alt text](./doc/menu.png)
 
-通过`alt+x`快捷键调用`addr2line-select`命令，快速调用addr2line，返回结果
+通过快捷键调用`addr2line-select`命令，快速调用addr2line，返回结果
 
 ## 文本编辑器中快速打开源码
-![Alt text](doc/source-select.png)
+![Alt text](./doc/menu.png)
 
 需要先设置 `so source directory`，添加相关的目录。
 
-当执行该菜单时，会自动获取当前行的内容，然后分析出源码和行号信息，目前支持的格式`(/.* at (.*):(\d*)/)`
-    
-
+当执行`source-select`菜单时，会自动获取当前行的内容，然后分析出源码和行号信息，目前支持的格式`(/.* at (.*):(\d*)/)`
 
 接着和预设好的目录进行逐一匹配，如果文件存在，就会自动打开文件并跳转到对应行号。

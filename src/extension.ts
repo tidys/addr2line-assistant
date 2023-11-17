@@ -183,7 +183,11 @@ export function activate(context: vscode.ExtensionContext) {
     if (result?.length === 3) {
       let source = normalize(result[1]);
       const line = result[2];
-      openEngineSourceFile(source, parseInt(line), false);
+      const b = openEngineSourceFile(source, parseInt(line), false);
+      if (!b) {
+        const dirs = getSoSourceDirectories();
+        vscode.window.showWarningMessage(`open failed: ${source}\n\ncurrent find directory:\n${dirs.join('\n')}`);
+      }
     } else {
       vscode.window.showInformationMessage("无法识别的格式");
     }
@@ -232,6 +236,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (uri && uri.length) {
       const file = uri[0].fsPath;
       await addSoSourceDirectory([file]);
+      vscode.window.showInformationMessage(`add source directory successfully: ${file}`);
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.nm', async (treeItem: ToolItem) => {
@@ -314,7 +319,10 @@ export function activate(context: vscode.ExtensionContext) {
         const { file, line } = result;
         const ret = `${file}:${line}`;
         info = ret;
-        openEngineSourceFile(normalize(file), line);
+        const b = openEngineSourceFile(normalize(file), line);
+        if (!b) {
+          vscode.window.showInformationMessage(`open file failed: ${file}`);
+        }
       } else {
         info = stdout;
       }
