@@ -15,7 +15,7 @@ import { ensureFileSync, unlinkSync, removeSync, } from 'fs-extra';
 import { ToolDataProvider, ToolItem } from './toolData';
 import { commandSync, command, ExecaChildProcess } from 'execa';
 import * as os from 'os';
-
+import * as moment from 'moment';
 export function activate(context: vscode.ExtensionContext) {
   assets.init(context);
   log.initLog();
@@ -631,6 +631,59 @@ export function activate(context: vscode.ExtensionContext) {
       treeDataProvider.refresh();
     } else {
       log.output(`添加app失败:${ret2.msg}`);
+    }
+  }));
+  /**
+   * 将tombstones拉取到本地
+   */
+  context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.pull-tombstones', async () => {
+    //
+    if (!ADbDriver.isSystemAdbAvailable()) {
+      return;
+    }
+    const prefix = `/data/tombstones`;
+    // 判断是否有多个墓碑文件
+    const cmd = `adb shell ls ${prefix} -l`;
+    log.output(cmd);
+    const ret: string = await ADbDriver.execADBCommand(cmd);
+    log.output(ret);
+    const lines = ret.split('\r\n');
+    const files: Array<{ time: string, file: string }> = []
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) {
+        continue;
+      }
+      const item = line.split(' ')
+      if (item.length !== 8) {
+        log.output(`skip ${line}`);
+        continue;
+      }
+      const time = `${item[5]} ${item[6]}`;;
+      const file = item[7];
+      // log.output(line);
+      files.push({ time, file })
+    }
+    files.sort((a, b) => {
+      const timeA = moment(a.time).toDate().getTime();
+      const timeB = moment(b.time).toDate().getTime();
+      return timeB - timeA;
+    });
+    if (!files.length) {
+      return;
+    }
+    const file = files[0];
+    const localFile = join(homedir(), 'tombstones', `${moment(file.time).format("YYYY-MM-DD_HH-MM")}.txt`);
+    ensureFileSync(localFile);
+    const pullCmd = `adb pull ${prefix}/${file.file} ${localFile}`;
+    log.output(pullCmd)
+    const ret2 = await ADbDriver.execADBCommand(pullCmd)
+    log.output(ret2);
+    if (ret2 && ret2.toLocaleLowerCase().startsWith("error")) {
+    } else {
+      vscode.workspace.openTextDocument(localFile).then(doc => {
+        vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+      });
     }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('addr2line-assistant.addIP', async () => {

@@ -3,7 +3,7 @@
   "displayName": "addr2line-assistant",
   "description": "",
   "icon": "address.png",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "engines": {
     "vscode": "^1.77.1"
   },
@@ -217,6 +217,10 @@
       {
         "command": "addr2line-assistant.setDefaultSo",
         "title": "set default so"
+      },
+      {
+        "command": "addr2line-assistant.pull-tombstones",
+        "title": "pull tombstones"
       }
     ],
     "viewsContainers": {
@@ -374,6 +378,7 @@
     "addr2line": "^0.0.4",
     "execa": "5.1.1",
     "fs-extra": "^11.1.1",
+    "moment": "^2.30.1",
     "vscode-languageclient": "8.1.0"
   }
 }
